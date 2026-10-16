@@ -31,8 +31,30 @@ const navigation = [
   { id: 'help', label: 'Help & docs', icon: BookOpen },
 ] as const;
 
+const SESSION_STORAGE_KEY = 'cmmi_session';
+
+function getStoredSession(): { token: string; user: User } | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
-  const [session, setSession] = useState<{ token: string; user: User } | null>(null);
+  const [session, setSessionState] = useState<{ token: string; user: User } | null>(
+    getStoredSession,
+  );
+  const setSession = (data: { token: string; user: User } | null) => {
+    setSessionState(data);
+    try {
+      if (data) sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
+      else sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // ignore storage access errors
+    }
+  };
   const [page, setPage] = useState<Page>(
     window.location.pathname === '/help' ? 'help' : 'contents',
   );
