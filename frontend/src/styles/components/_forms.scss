@@ -2,13 +2,13 @@
 
 label {
   display: grid;
-  gap: 8px;
-  font-size: 13.5px;
+  gap: 5px;
+  font-size: 13px;
   font-weight: 500;
   color: v.$text-main;
 
   small {
-    font-size: 12px;
+    font-size: 11.5px;
     color: v.$text-muted;
     font-weight: 400;
   }
@@ -21,10 +21,10 @@ textarea {
   border-radius: v.$radius-md;
   color: v.$text-main;
   background: v.$surface;
-  padding: 10px 14px;
+  padding: 7px 12px;
   width: 100%;
-  line-height: 1.5;
-  font-size: 14px;
+  line-height: 1.45;
+  font-size: 13.5px;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -43,13 +43,13 @@ textarea {
 textarea {
   resize: vertical;
   font-family: inherit;
-  min-height: 120px;
+  min-height: 96px;
 }
 
 input[type='checkbox'] {
   accent-color: v.$brand-primary;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -68,17 +68,17 @@ fieldset {
   legend {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 13.5px;
     font-weight: 600;
     color: v.$text-main;
     padding: 0;
-    margin: 0 0 16px;
+    margin: 0 0 10px;
 
     small {
       font-weight: 400;
       color: v.$text-muted;
-      font-size: 12px;
+      font-size: 11.5px;
       margin-left: 6px;
     }
   }
@@ -87,7 +87,7 @@ fieldset {
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 12px;
 }
 
 .checkbox-label {
@@ -103,34 +103,34 @@ fieldset {
 .scope-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 22px;
+  padding-bottom: 14px;
   border-bottom: 1px solid v.$border;
 
   span {
     display: grid;
-    gap: 4px;
+    gap: 3px;
 
     strong {
-      font-size: 14px;
+      font-size: 13.5px;
       color: v.$text-main;
     }
 
     small {
-      font-size: 12.5px;
+      font-size: 12px;
       color: v.$text-muted;
     }
   }
 
   input[type='checkbox'] {
-    width: 38px;
-    height: 22px;
+    width: 34px;
+    height: 20px;
   }
 }
 

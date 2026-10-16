@@ -4,11 +4,11 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 9px 18px;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 15px;
   border-radius: v.$radius-md;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   border: 1px solid transparent;
   transition:
@@ -30,6 +30,13 @@
     cursor: not-allowed;
     transform: none;
   }
+}
+
+.button--sm {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 12px;
+  gap: 5px;
 }
 
 .button--primary {
@@ -60,11 +67,22 @@
   }
 }
 
+.button--ghost {
+  background: transparent;
+  color: v.$text-body;
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background: v.$slate-100;
+    color: v.$text-main;
+  }
+}
+
 .icon-button {
   display: inline-grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: v.$radius-md;
   border: 1px solid transparent;
   background: transparent;

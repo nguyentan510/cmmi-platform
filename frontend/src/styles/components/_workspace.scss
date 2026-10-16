@@ -4,20 +4,20 @@
 .toolbar {
   display: flex;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 16px;
   border-bottom: 1px solid v.$border;
   background: v.$surface;
 }
 
 .tabs {
   display: flex;
-  gap: 24px;
+  gap: 18px;
 }
 
 .tab {
   position: relative;
-  padding: 14px 0;
-  font-size: 13.5px;
+  padding: 9px 0;
+  font-size: 13px;
   font-weight: 500;
   color: v.$text-muted;
   white-space: nowrap;
@@ -52,12 +52,12 @@
   gap: 2px;
   border: 1px solid v.$border;
   border-radius: v.$radius-md;
-  padding: 3px;
+  padding: 2px;
   align-self: center;
   background: v.$slate-50;
 
   button {
-    padding: 5px 8px;
+    padding: 4px 7px;
     border-radius: v.$radius-sm;
     color: v.$text-muted;
     background: transparent;
@@ -82,23 +82,23 @@
 }
 
 .filterbar {
-  padding: 16px 24px;
+  padding: 9px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   border-bottom: 1px solid v.$border;
   background: v.$surface;
 
   > div {
     display: flex;
-    gap: 10px;
+    gap: 8px;
   }
 
   select {
-    padding: 8px 12px;
-    font-size: 13px;
-    min-width: 130px;
+    padding: 5px 10px;
+    font-size: 12.5px;
+    min-width: 120px;
     color: v.$text-body;
     border: 1px solid v.$border-strong;
     border-radius: v.$radius-md;
@@ -110,19 +110,19 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: 280px;
+  width: 250px;
 
   svg {
     color: v.$text-muted;
     position: absolute;
-    left: 12px;
+    left: 10px;
     pointer-events: none;
   }
 
   input {
-    padding: 8px 14px 8px 36px;
+    padding: 6px 12px 6px 30px;
     border: 1px solid v.$border-strong;
-    font-size: 13.5px;
+    font-size: 13px;
     border-radius: v.$radius-md;
     background: v.$slate-50;
     color: v.$text-main;
@@ -146,15 +146,15 @@ table {
   border-collapse: collapse;
   width: 100%;
   text-align: left;
-  font-size: 13.5px;
+  font-size: 13px;
 
   th {
-    font-size: 12px;
+    font-size: 11.5px;
     color: v.$text-muted;
     letter-spacing: 0.05em;
     font-weight: 600;
     text-transform: uppercase;
-    padding: 14px 18px;
+    padding: 8px 12px;
     background: v.$slate-50;
     white-space: nowrap;
     border-bottom: 1px solid v.$border;
@@ -167,7 +167,7 @@ table {
   }
 
   td {
-    padding: 14px 18px;
+    padding: 8px 12px;
     border-top: 1px solid v.$border;
     color: v.$text-body;
     vertical-align: middle;
@@ -175,7 +175,7 @@ table {
 
   th:first-child,
   td:first-child {
-    padding-left: 24px;
+    padding-left: 16px;
   }
 
   tr:hover td {
@@ -220,10 +220,10 @@ td:has(> .table-marker) {
 
 .content-title {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   text-align: left;
-  min-width: 220px;
+  min-width: 180px;
   padding: 0;
   background: transparent;
   border: none;
@@ -235,7 +235,7 @@ td:has(> .table-marker) {
 
   strong {
     display: block;
-    font-size: 14px;
+    font-size: 13.5px;
     color: v.$text-main;
     white-space: nowrap;
 
@@ -247,16 +247,16 @@ td:has(> .table-marker) {
   small {
     display: block;
     color: v.$text-muted;
-    font-size: 12px;
-    margin-top: 3px;
-    max-width: 260px;
+    font-size: 11.5px;
+    margin-top: 1px;
+    max-width: 240px;
     @include m.truncate;
   }
 }
 
 .content-thumb {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   border-radius: v.$radius-md;
@@ -336,18 +336,18 @@ td:has(> .table-marker) {
 
 .channels {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .channel {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: v.$slate-100;
   border: 1px solid v.$border;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: v.$text-muted;
 }
@@ -406,21 +406,21 @@ td:has(> .table-marker) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 9px 16px;
   border-top: 1px solid v.$border;
-  font-size: 13px;
+  font-size: 12.5px;
   color: v.$text-muted;
   background: v.$surface;
 
   > div {
     display: flex;
-    gap: 8px;
+    gap: 6px;
   }
 
   button {
     display: grid;
     place-items: center;
-    padding: 6px;
+    padding: 5px;
     border: 1px solid v.$border-strong;
     border-radius: v.$radius-sm;
     color: v.$text-body;
@@ -446,20 +446,20 @@ td:has(> .table-marker) {
   display: grid;
   justify-items: center;
   text-align: center;
-  padding: 64px 24px;
+  padding: 40px 20px;
 
   h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    margin: 18px 0 8px;
+    margin: 12px 0 6px;
     color: v.$text-main;
   }
 
   p {
     color: v.$text-muted;
-    font-size: 14px;
+    font-size: 13px;
     max-width: 320px;
-    line-height: 1.6;
+    line-height: 1.5;
   }
 }
 
@@ -468,55 +468,55 @@ td:has(> .table-marker) {
   place-items: center;
   background: v.$brand-light;
   border: 1px solid v.$status-published-border;
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   color: v.$brand-primary;
 }
 
 .loading {
-  padding: 64px 20px;
+  padding: 40px 20px;
   text-align: center;
   color: v.$text-muted;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .bottom-note {
-  margin-top: 24px;
+  margin-top: 16px;
   background: v.$slate-50;
   border: 1px solid v.$border;
   border-radius: v.$radius-lg;
-  padding: 18px 24px;
+  padding: 12px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 
   > div {
     display: flex;
-    gap: 14px;
+    gap: 10px;
     align-items: center;
   }
 
   strong {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
     color: v.$text-main;
   }
 
   small {
     display: block;
-    font-size: 12.5px;
+    font-size: 12px;
     color: v.$text-muted;
     margin-top: 2px;
   }
 
   a {
     color: v.$brand-primary;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     display: flex;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
     white-space: nowrap;
     text-decoration: none;
@@ -528,8 +528,8 @@ td:has(> .table-marker) {
 }
 
 .note-icon {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   color: v.$brand-primary;
   background: v.$brand-light;
@@ -540,14 +540,14 @@ td:has(> .table-marker) {
 }
 
 .calendar {
-  padding: 20px 24px;
+  padding: 14px 18px;
 }
 
 .calendar__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 
   h3 {
     font-size: 17px;
@@ -596,10 +596,10 @@ td:has(> .table-marker) {
 }
 
 .calendar__day {
-  min-height: 100px;
+  min-height: 80px;
   border-bottom: 1px solid v.$border;
   border-right: 1px solid v.$border;
-  padding: 8px;
+  padding: 6px;
 
   > span {
     font-size: 12px;
@@ -643,14 +643,14 @@ td:has(> .table-marker) {
 }
 
 .upload-zone {
-  padding: 32px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
   border: 2px dashed v.$border-strong;
-  border-radius: v.$radius-xl;
+  border-radius: v.$radius-lg;
   background: v.$slate-50;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
   transition: border-color 0.15s ease;
 
   &:hover {
@@ -661,14 +661,14 @@ td:has(> .table-marker) {
     background: v.$brand-light;
     color: v.$brand-primary;
     border: 1px solid v.$status-published-border;
-    padding: 18px;
-    border-radius: 16px;
+    padding: 10px;
+    border-radius: 12px;
   }
 
   p {
-    font-size: 13.5px;
+    font-size: 12.5px;
     color: v.$text-muted;
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
   > label {
@@ -676,25 +676,25 @@ td:has(> .table-marker) {
   }
 
   h2 {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     color: v.$text-main;
   }
 }
 
 .upload-progress-card {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   background: v.$surface;
   border: 1px solid v.$border-strong;
   border-radius: v.$radius-lg;
-  padding: 16px 20px;
+  padding: 12px 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   animation: fadeIn 0.2s ease-in-out;
 
   &--compact {
-    margin-top: 12px;
-    margin-bottom: 12px;
-    padding: 12px 16px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
     background: v.$slate-50;
   }
 
@@ -798,8 +798,8 @@ td:has(> .table-marker) {
 .media-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 0 24px 28px;
-  gap: 20px;
+  padding: 0 16px 20px;
+  gap: 14px;
 }
 
 .media-card {
@@ -984,19 +984,19 @@ td:has(> .table-marker) {
 }
 
 .media-card__body {
-  padding: 14px;
+  padding: 10px 12px;
 
   h3 {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
     color: v.$text-main;
     @include m.truncate;
   }
 
   p {
-    font-size: 12px;
+    font-size: 11.5px;
     color: v.$text-muted;
-    margin: 4px 0 12px;
+    margin: 2px 0 8px;
 
     span {
       margin: 0 4px;
@@ -1010,7 +1010,7 @@ td:has(> .table-marker) {
     color: v.$text-muted;
 
     small {
-      font-size: 11.5px;
+      font-size: 11px;
     }
 
     button {
@@ -1032,12 +1032,12 @@ td:has(> .table-marker) {
 .info-banner {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 18px 24px;
+  gap: 12px;
+  padding: 12px 18px;
   border-radius: v.$radius-lg;
   background: v.$brand-light;
   border: 1px solid v.$status-published-border;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   color: v.$brand-primary;
 
   strong {
