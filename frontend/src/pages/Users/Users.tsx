@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Plus, UsersRound } from 'lucide-react';
-import { ErrorBox, Pager } from '../../components/Shared';
+import { Drawer, ErrorBox, Pager } from '../../components/Shared';
 import { type Api, type User, dateText, errorMessage, result } from '../../services/api';
 import { useLoad } from '../../services/useLoad';
 
@@ -10,28 +10,34 @@ export default function UserManager({ api, currentUser }: { api: Api; currentUse
   const [role, setRole] = useState<'CREATOR' | 'ADMIN'>('CREATOR');
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState('');
+  const [createError, setCreateError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   const users = useLoad(
     () => result(api.GET('/api/v1/users', { params: { query: { offset, limit: 50 } } })),
     [api, offset],
   );
+
   async function create(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError('');
+    setCreateError('');
     try {
       await result(api.POST('/api/v1/users', { body: { email, password, role } }));
       setEmail('');
       setPassword('');
       setMessage('User created. Share their initial credentials through your secure channel.');
+      setIsDrawerOpen(false);
       users.reload();
     } catch (e) {
-      setError(errorMessage(e));
+      setCreateError(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
+
   async function change(user: User, change: { is_active?: boolean; role?: 'ADMIN' | 'CREATOR' }) {
     if (!window.confirm(`Update access for ${user.email}?`)) return;
     setBusy(true);
@@ -50,6 +56,7 @@ export default function UserManager({ api, currentUser }: { api: Api; currentUse
       setBusy(false);
     }
   }
+
   return (
     <>
       <ErrorBox message={error || users.error} />
@@ -58,58 +65,29 @@ export default function UserManager({ api, currentUser }: { api: Api; currentUse
           {message}
         </div>
       )}
+
       <section className="panel">
         <div className="panel__heading">
           <div>
-            <h2>Invite a new perspective</h2>
-            <p>Create a workspace account for your team.</p>
+            <h2>
+              The people behind the stories{' '}
+              <span className="count">{users.data?.length ?? 0}</span>
+            </h2>
+            <p>Account roles and workspace access.</p>
           </div>
-          <UsersRound size={23} />
-        </div>
-        <form className="settings-form" onSubmit={create}>
-          <div className="form-grid">
-            <label>
-              User email
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Initial password
-              <input
-                type="password"
-                minLength={12}
-                maxLength={128}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </label>
-          </div>
-          <label>
-            Role
-            <select value={role} onChange={(e) => setRole(e.target.value as typeof role)}>
-              <option value="CREATOR">Creator · own content & media</option>
-              <option value="ADMIN">Admin · workspace administration</option>
-            </select>
-          </label>
-          <button className="button button--primary" disabled={busy}>
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => {
+              setIsDrawerOpen(true);
+              setCreateError('');
+            }}
+          >
             <Plus size={16} />
-            Create user
+            Invite user
           </button>
-        </form>
-      </section>
-      <section className="panel section-gap">
-        <div className="panel__heading">
-          <div>
-            <h2>The people behind the stories</h2>
-            <p>Account roles and access.</p>
-          </div>
         </div>
+
         <div className="table-scroll">
           <table>
             <thead>
@@ -157,6 +135,84 @@ export default function UserManager({ api, currentUser }: { api: Api; currentUse
         </div>
         <Pager offset={offset} length={users.data?.length ?? 0} onChange={setOffset} />
       </section>
+
+      {isDrawerOpen && (
+        <Drawer
+          title="Invite a new perspective"
+          eyebrow="WORKSPACE ACCESS"
+          onClose={() => {
+            if (!busy) setIsDrawerOpen(false);
+          }}
+          initialWidth={540}
+          minWidth={380}
+          storageKey="cmmi_drawer_user_width"
+        >
+          <form className="drawer-form" onSubmit={create}>
+            <div className="drawer-intro">
+              <UsersRound size={22} className="drawer-intro__icon" />
+              <div>
+                <h3>Create workspace account</h3>
+                <p>
+                  Add a new member with specific role privileges. Initial credentials should be
+                  shared through your secure communication channel.
+                </p>
+              </div>
+            </div>
+
+            <ErrorBox message={createError} />
+
+            <div className="form-grid">
+              <label>
+                User email
+                <input
+                  type="email"
+                  value={email}
+                  placeholder="name@company.com"
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </label>
+              <label>
+                Initial password
+                <input
+                  type="password"
+                  minLength={12}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  value={password}
+                  placeholder="Min. 12 characters"
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+
+            <label>
+              Role
+              <select value={role} onChange={(e) => setRole(e.target.value as typeof role)}>
+                <option value="CREATOR">Creator · own content & media</option>
+                <option value="ADMIN">Admin · workspace administration</option>
+              </select>
+            </label>
+
+            <div className="modal__actions drawer__actions">
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={busy}
+                onClick={() => setIsDrawerOpen(false)}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="button button--primary" disabled={busy}>
+                <Plus size={16} />
+                {busy ? 'Creating user…' : 'Create user'}
+              </button>
+            </div>
+          </form>
+        </Drawer>
+      )}
     </>
   );
 }

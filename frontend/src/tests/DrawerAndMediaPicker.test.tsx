@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { Drawer } from '../components/Shared';
 import ContentEditor from '../pages/ContentManager/ContentEditor';
 import MediaPickerModal from '../pages/ContentManager/MediaPickerModal';
-import type { Api, Content, Media } from '../services/api';
+import UserManager from '../pages/Users/Users';
+import ApiKeys from '../pages/ApiKeys/ApiKeys';
+import MediaLibrary from '../pages/MediaLibrary/MediaLibrary';
+import type { Api, Content, Media, User } from '../services/api';
 
 describe('Drawer Component', () => {
   test('renders with accessible dialog role, title, and close button', () => {
@@ -224,3 +227,102 @@ describe('MediaPickerModal & ContentEditor Visual Media Flow', () => {
     expect(document.querySelector('.selected-media-card')).toHaveTextContent('hero-banner.jpg');
   });
 });
+
+describe('Slide Drawer Conversion for Users, ApiKeys, and MediaLibrary', () => {
+  const dummyUser: User = {
+    id: 'user-1',
+    email: 'admin@cmmi.studio',
+    role: 'ADMIN',
+    is_active: true,
+    created_at: '2026-10-16T00:00:00Z',
+  };
+
+  const dummyApi = {
+    GET: vi.fn().mockImplementation((path: string) => {
+      if (path === '/api/v1/users') {
+        return Promise.resolve({ data: [dummyUser], error: null });
+      }
+      if (path === '/api/v1/api-keys') {
+        return Promise.resolve({ data: [], error: null });
+      }
+      if (path === '/api/v1/media') {
+        return Promise.resolve({ data: [], error: null });
+      }
+      return Promise.resolve({ data: [], error: null });
+    }),
+    POST: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    PATCH: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    DELETE: vi.fn().mockResolvedValue({ data: {}, error: null }),
+  } as unknown as Api;
+
+  test('Users page: creation form is not visible by default and opens in Drawer on button click', async () => {
+    render(<UserManager api={dummyApi} currentUser={dummyUser} />);
+
+    // Form inputs should NOT be visible by default
+    expect(screen.queryByLabelText('User email')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Initial password')).not.toBeInTheDocument();
+
+    // Click "Invite user" button
+    const inviteBtn = screen.getByRole('button', { name: /invite user/i });
+    expect(inviteBtn).toBeInTheDocument();
+    fireEvent.click(inviteBtn);
+
+    // Now drawer is open with accessible dialog role and title
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Invite a new perspective' })).toBeInTheDocument();
+    expect(screen.getByLabelText('User email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Initial password')).toBeInTheDocument();
+
+    // Close button dismisses drawer
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelBtn);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  test('ApiKeys page: connection form is not visible by default and opens in Drawer on button click', async () => {
+    render(<ApiKeys api={dummyApi} isAdmin={true} />);
+
+    // Form inputs should NOT be visible by default
+    expect(screen.queryByLabelText('Key name')).not.toBeInTheDocument();
+
+    // Click "New API key" button
+    const newKeyBtn = screen.getByRole('button', { name: /new api key/i });
+    expect(newKeyBtn).toBeInTheDocument();
+    fireEvent.click(newKeyBtn);
+
+    // Now drawer is open
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Create a connection' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Key name')).toBeInTheDocument();
+
+    // Close drawer
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelBtn);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  test('MediaLibrary page: upload zone is not visible by default and opens in Drawer on button click', async () => {
+    render(<MediaLibrary api={dummyApi} />);
+
+    // Upload drawer dialog should NOT be visible by default
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Upload media' })).not.toBeInTheDocument();
+
+    // Click "Upload media" button
+    const uploadBtn = screen.getByRole('button', { name: /upload media/i });
+    expect(uploadBtn).toBeInTheDocument();
+    fireEvent.click(uploadBtn);
+
+    // Now upload drawer is open
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Upload media' })).toBeInTheDocument();
+    expect(screen.getByText('Drop images or videos here')).toBeInTheDocument();
+    expect(screen.getByLabelText('Upload media', { selector: 'input' })).toBeInTheDocument();
+
+    // Close drawer
+    const closeBtn = screen.getByRole('button', { name: 'Close' });
+    fireEvent.click(closeBtn);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+

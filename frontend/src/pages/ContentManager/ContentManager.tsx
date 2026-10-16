@@ -12,7 +12,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { Badge, Empty, ErrorBox, Pager, VideoThumbnail } from '../../components/Shared';
+import { Badge, ChannelBadge, Empty, ErrorBox, Pager, VideoThumbnail } from '../../components/Shared';
 import {
   type Api,
   type Content,
@@ -261,19 +261,9 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
                     </td>
                     <td>
                       <div className="channels">
-                        {[
-                          ['f', item.fb_post_id, 'Facebook'],
-                          ['t', item.tiktok_post_id, 'TikTok'],
-                          ['▶', item.youtube_post_id, 'YouTube'],
-                        ].map(([label, value, name]) => (
-                          <span
-                            className={value ? 'channel channel--connected' : 'channel'}
-                            title={`${name}: ${value || 'Not posted'}`}
-                            key={name}
-                          >
-                            {label}
-                          </span>
-                        ))}
+                        <ChannelBadge channel="facebook" value={item.fb_post_id} />
+                        <ChannelBadge channel="tiktok" value={item.tiktok_post_id} />
+                        <ChannelBadge channel="youtube" value={item.youtube_post_id} />
                       </div>
                     </td>
                     <td className="date-cell">{dateText(item.scheduled_at)}</td>

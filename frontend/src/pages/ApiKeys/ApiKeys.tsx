@@ -1,6 +1,6 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import { Check, Copy, KeyRound, Plus, ShieldCheck, Trash2 } from 'lucide-react';
-import { Empty, ErrorBox, Modal } from '../../components/Shared';
+import { Drawer, Empty, ErrorBox, Modal } from '../../components/Shared';
 import { type Api, type Key, dateText, errorMessage, result } from '../../services/api';
 import { useLoad } from '../../services/useLoad';
 
@@ -17,30 +17,38 @@ export default function ApiKeys({ api, isAdmin = false }: { api: Api; isAdmin?: 
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   const keys = useLoad(() => result(api.GET('/api/v1/api-keys')), [api]);
+
   const close = useCallback(() => {
     setSecret(null);
     setCopied(false);
   }, []);
+
   async function create(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError('');
+    setCreateError('');
     try {
       const key = await result(
         api.POST('/api/v1/api-keys', {
           body: { name, scopes, expires_at: expiry ? new Date(expiry).toISOString() : null },
         }),
       );
+      setIsDrawerOpen(false);
       setSecret(key.key);
       setName('');
+      setExpiry('');
       keys.reload();
     } catch (e) {
-      setError(errorMessage(e));
+      setCreateError(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
+
   async function revoke(key: Key) {
     if (
       !window.confirm(
@@ -58,6 +66,7 @@ export default function ApiKeys({ api, isAdmin = false }: { api: Api; isAdmin?: 
       setError(errorMessage(e));
     }
   }
+
   const available = [
     'contents:read',
     'contents:write',
@@ -67,6 +76,7 @@ export default function ApiKeys({ api, isAdmin = false }: { api: Api; isAdmin?: 
     'keys:write',
     ...(isAdmin ? ['users:read', 'users:write', 'settings:read', 'settings:write'] : []),
   ];
+
   return (
     <>
       <div className="info-banner">
@@ -80,73 +90,30 @@ export default function ApiKeys({ api, isAdmin = false }: { api: Api; isAdmin?: 
         </div>
       </div>
       <ErrorBox message={error || keys.error} />
+
       <section className="panel">
         <div className="panel__heading">
           <div>
-            <h2>Create a connection</h2>
-            <p>A dedicated key for your next workflow.</p>
-          </div>
-          <KeyRound size={24} strokeWidth={1.3} />
-        </div>
-        <form className="settings-form" onSubmit={create}>
-          <div className="form-grid">
-            <label>
-              Key name
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Publishing assistant"
-                maxLength={100}
-                required
-              />
-            </label>
-            <label>
-              Expires at · optional
-              <input
-                type="datetime-local"
-                value={expiry}
-                onChange={(e) => setExpiry(e.target.value)}
-              />
-            </label>
-          </div>
-          <fieldset>
-            <legend>
-              Permissions <small>Select the smallest set your workflow needs.</small>
-            </legend>
-            <div className="scope-grid">
-              {available.map((scope) => (
-                <label key={scope} className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={scopes.includes(scope)}
-                    onChange={(e) =>
-                      setScopes((previous) =>
-                        e.target.checked
-                          ? [...previous, scope]
-                          : previous.filter((s) => s !== scope),
-                      )
-                    }
-                  />
-                  {scope}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <button className="button button--primary" disabled={busy || !scopes.length}>
-            <Plus size={16} />
-            {busy ? 'Creating…' : 'Create key'}
-          </button>
-        </form>
-      </section>
-      <section className="panel section-gap">
-        <div className="panel__heading">
-          <div>
-            <h2>Your connections</h2>
+            <h2>
+              Your connections <span className="count">{keys.data?.length ?? 0}</span>
+            </h2>
             <p>
               {isAdmin ? 'API keys across the workspace.' : 'Keys you have created for your tools.'}
             </p>
           </div>
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => {
+              setIsDrawerOpen(true);
+              setCreateError('');
+            }}
+          >
+            <Plus size={16} />
+            New API key
+          </button>
         </div>
+
         {keys.loading ? (
           <div className="loading">Loading connections…</div>
         ) : keys.data?.length ? (
@@ -209,6 +176,100 @@ export default function ApiKeys({ api, isAdmin = false }: { api: Api; isAdmin?: 
           </Empty>
         )}
       </section>
+
+      {isDrawerOpen && (
+        <Drawer
+          title="Create a connection"
+          eyebrow="INTEGRATION"
+          onClose={() => {
+            if (!busy) setIsDrawerOpen(false);
+          }}
+          initialWidth={580}
+          minWidth={400}
+          storageKey="cmmi_drawer_apikey_width"
+        >
+          <form className="drawer-form" onSubmit={create}>
+            <div className="drawer-intro">
+              <KeyRound size={22} className="drawer-intro__icon" />
+              <div>
+                <h3>Generate API Key</h3>
+                <p>
+                  Create a dedicated key for an automation, script, or AI agent.
+                  Give each integration only the exact permissions it needs.
+                </p>
+              </div>
+            </div>
+
+            <ErrorBox message={createError} />
+
+            <div className="form-grid">
+              <label>
+                Key name
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Publishing assistant"
+                  maxLength={100}
+                  required
+                  autoFocus
+                />
+              </label>
+              <label>
+                Expires at · optional
+                <input
+                  type="datetime-local"
+                  value={expiry}
+                  onChange={(e) => setExpiry(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <fieldset>
+              <legend>
+                Permissions <small>Select the smallest set your workflow needs.</small>
+              </legend>
+              <div className="scope-grid">
+                {available.map((scope) => (
+                  <label key={scope} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={scopes.includes(scope)}
+                      onChange={(e) =>
+                        setScopes((previous) =>
+                          e.target.checked
+                            ? [...previous, scope]
+                            : previous.filter((s) => s !== scope),
+                        )
+                      }
+                    />
+                    {scope}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="modal__actions drawer__actions">
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={busy}
+                onClick={() => setIsDrawerOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="button button--primary"
+                disabled={busy || !scopes.length}
+              >
+                <Plus size={16} />
+                {busy ? 'Creating…' : 'Create key'}
+              </button>
+            </div>
+          </form>
+        </Drawer>
+      )}
+
       {secret && (
         <Modal title="Your new API key" onClose={close}>
           <div className="settings-form">

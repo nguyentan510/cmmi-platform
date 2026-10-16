@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   ImagePlus,
   Layers3,
   Loader2,
@@ -9,7 +10,15 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { Drawer, ErrorBox, VideoThumbnail } from '../../components/Shared';
+import {
+  Drawer,
+  ErrorBox,
+  FacebookIcon,
+  TikTokIcon,
+  VideoThumbnail,
+  YouTubeIcon,
+  getChannelUrl,
+} from '../../components/Shared';
 import {
   type Api,
   type Content,
@@ -401,16 +410,44 @@ export default function ContentEditor({
               Distribution channels <small>Leave empty until your story goes live.</small>
             </legend>
             <label>
-              Facebook Post
+              <span className="channel-field-header">
+                <FacebookIcon size={14} className="channel-icon--facebook" />
+                <span>Facebook Post</span>
+                {facebook && (
+                  <a
+                    href={getChannelUrl('facebook', facebook)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="channel-preview-link"
+                    title="Mở bài đăng Facebook"
+                  >
+                    Xem bài đăng <ExternalLink size={11} />
+                  </a>
+                )}
+              </span>
               <input
                 value={facebook}
                 onChange={(e) => setFacebook(e.target.value)}
-                placeholder="Post ID or URL"
+                placeholder="Post ID or URL (e.g. https://facebook.com/...)"
               />
             </label>
             <div className="form-grid">
               <label>
-                TikTok Post
+                <span className="channel-field-header">
+                  <TikTokIcon size={14} className="channel-icon--tiktok" />
+                  <span>TikTok Post</span>
+                  {tiktok && (
+                    <a
+                      href={getChannelUrl('tiktok', tiktok)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="channel-preview-link"
+                      title="Mở bài đăng TikTok"
+                    >
+                      Xem <ExternalLink size={11} />
+                    </a>
+                  )}
+                </span>
                 <input
                   value={tiktok}
                   onChange={(e) => setTiktok(e.target.value)}
@@ -418,7 +455,21 @@ export default function ContentEditor({
                 />
               </label>
               <label>
-                YouTube Post
+                <span className="channel-field-header">
+                  <YouTubeIcon size={14} className="channel-icon--youtube" />
+                  <span>YouTube Post</span>
+                  {youtube && (
+                    <a
+                      href={getChannelUrl('youtube', youtube)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="channel-preview-link"
+                      title="Mở bài đăng YouTube"
+                    >
+                      Xem <ExternalLink size={11} />
+                    </a>
+                  )}
+                </span>
                 <input
                   value={youtube}
                   onChange={(e) => setYoutube(e.target.value)}

@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleAlert,
+  ExternalLink,
   Inbox,
   Maximize2,
   Minimize2,
@@ -314,6 +315,9 @@ export function Modal({
   backdropClassName?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const node = ref.current!;
@@ -323,7 +327,7 @@ export function Modal({
       );
     focusable()[0]?.focus();
     const keydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
       if (e.key === 'Tab') {
         const elements = focusable();
         const first = elements[0],
@@ -346,12 +350,12 @@ export function Modal({
       document.body.style.overflow = overflow;
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div
       className={`modal-backdrop ${backdropClassName}`}
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onCloseRef.current();
       }}
     >
       <div
@@ -383,6 +387,7 @@ export function Drawer({
   onClose,
   initialWidth = 740,
   minWidth = 460,
+  storageKey = 'cmmi_drawer_width',
 }: {
   title: string;
   eyebrow?: string;
@@ -390,10 +395,11 @@ export function Drawer({
   onClose: () => void;
   initialWidth?: number;
   minWidth?: number;
+  storageKey?: string;
 }) {
   const [width, setWidth] = useState<number>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cmmi_drawer_width');
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = parseInt(saved, 10);
         if (!isNaN(parsed) && parsed >= minWidth && parsed <= window.innerWidth) {
@@ -412,6 +418,8 @@ export function Drawer({
   const preMaximizeWidthRef = useRef(width);
 
   const ref = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -423,7 +431,7 @@ export function Drawer({
       );
     focusable()[0]?.focus();
     const keydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
       if (e.key === 'Tab') {
         const elements = focusable();
         const first = elements[0],
@@ -446,7 +454,7 @@ export function Drawer({
       document.body.style.overflow = overflow;
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -471,7 +479,7 @@ export function Drawer({
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
       try {
-        localStorage.setItem('cmmi_drawer_width', String(widthRef.current));
+        localStorage.setItem(storageKey, String(widthRef.current));
       } catch {
         /* ignore */
       }
@@ -559,3 +567,139 @@ export function Drawer({
     </div>
   );
 }
+
+export function getChannelUrl(
+  channel: 'facebook' | 'tiktok' | 'youtube',
+  value?: string | null,
+): string {
+  if (!value || !value.trim()) return '';
+  const val = value.trim();
+  if (val.startsWith('http://') || val.startsWith('https://')) return val;
+  if (channel === 'facebook') return `https://facebook.com/${val}`;
+  if (channel === 'tiktok') {
+    if (val.startsWith('@')) return `https://www.tiktok.com/${val}`;
+    return `https://www.tiktok.com/@/video/${val}`;
+  }
+  if (channel === 'youtube') return `https://www.youtube.com/watch?v=${val}`;
+  return `https://${val}`;
+}
+
+export function FacebookIcon({
+  size = 14,
+  className = '',
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+
+export function TikTokIcon({
+  size = 14,
+  className = '',
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743 2.895 2.895 0 0 1 2.312-4.634c.316 0 .62.05.906.144V9.421a6.34 6.34 0 0 0-.906-.065 6.342 6.342 0 0 0-6.335 6.334 6.342 6.342 0 0 0 6.335 6.334 6.342 6.342 0 0 0 6.334-6.334V8.349a8.167 8.167 0 0 0 4.67 1.454V6.368a4.84 4.84 0 0 1-.9-.082v.4z" />
+    </svg>
+  );
+}
+
+export function YouTubeIcon({
+  size = 14,
+  className = '',
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
+
+export function ChannelBadge({
+  channel,
+  value,
+}: {
+  channel: 'facebook' | 'tiktok' | 'youtube';
+  value?: string | null;
+}) {
+  const url = getChannelUrl(channel, value);
+  const name = channel === 'facebook' ? 'Facebook' : channel === 'tiktok' ? 'TikTok' : 'YouTube';
+  const Icon =
+    channel === 'facebook' ? FacebookIcon : channel === 'tiktok' ? TikTokIcon : YouTubeIcon;
+
+  if (url) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`channel channel--connected channel--${channel}`}
+        onClick={(e) => e.stopPropagation()}
+        aria-label={`${name}: ${url}`}
+      >
+        <Icon size={13} />
+        <span className="channel-tooltip" role="tooltip">
+          <span className="channel-tooltip__header">
+            <Icon size={12} />
+            <strong>{name}</strong>
+            <span className="channel-tooltip__badge">Đã liên kết</span>
+          </span>
+          <span className="channel-tooltip__url">{url}</span>
+          <span className="channel-tooltip__cta">
+            Mở bài đăng <ExternalLink size={11} />
+          </span>
+        </span>
+      </a>
+    );
+  }
+
+  return (
+    <span
+      className={`channel channel--disabled channel--${channel}`}
+      aria-label={`${name}: Chưa đăng bài`}
+    >
+      <Icon size={13} />
+      <span className="channel-tooltip" role="tooltip">
+        <span className="channel-tooltip__header">
+          <Icon size={12} />
+          <strong>{name}</strong>
+          <span className="channel-tooltip__badge channel-tooltip__badge--muted">Chưa đăng</span>
+        </span>
+        <span className="channel-tooltip__url">Chưa liên kết bài đăng</span>
+      </span>
+    </span>
+  );
+}
+

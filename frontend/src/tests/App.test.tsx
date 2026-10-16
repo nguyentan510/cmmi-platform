@@ -200,6 +200,7 @@ test('API key secret is visible once and disappears when dismissed', async () =>
   const u = await signIn();
   await u.click(screen.getByRole('button', { name: 'API keys' }));
   await screen.findByRole('heading', { name: 'API keys' });
+  await u.click(screen.getByRole('button', { name: 'New API key' }));
   await u.type(screen.getByLabelText('Key name'), 'Publishing bot');
   await u.click(screen.getByRole('button', { name: 'Create key' }));
   expect(await screen.findByText('cmmi_live_show-only-once')).toBeInTheDocument();
@@ -212,8 +213,9 @@ test('media uploads directly then confirms before showing a preview', async () =
   await renderApp();
   const u = await signIn();
   await u.click(screen.getByRole('button', { name: 'Media library' }));
+  await u.click(screen.getByRole('button', { name: 'Upload media' }));
   await u.upload(
-    screen.getByLabelText('Upload media'),
+    screen.getByLabelText('Upload media', { selector: 'input' }),
     new File(['abc'], 'frame.png', { type: 'image/png' }),
   );
   expect(await screen.findByAltText('frame.png')).toBeInTheDocument();
@@ -245,6 +247,7 @@ test('admin creates a creator through user management', async () => {
   await renderApp();
   const u = await signIn();
   await u.click(screen.getByRole('button', { name: 'Users' }));
+  await u.click(screen.getByRole('button', { name: 'Invite user' }));
   await u.type(await screen.findByLabelText('User email'), 'creator@example.com');
   await u.type(screen.getByLabelText('Initial password'), 'CreatorPassword123!');
   await u.click(screen.getByRole('button', { name: 'Create user' }));

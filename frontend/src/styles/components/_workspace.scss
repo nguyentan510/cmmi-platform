@@ -336,26 +336,215 @@ td:has(> .table-marker) {
 
 .channels {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
 }
 
 .channel {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: v.$radius-sm;
   background: v.$slate-100;
   border: 1px solid v.$border;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: v.$text-muted;
+  color: v.$slate-400;
+  text-decoration: none;
+  cursor: default;
+  transition: all 0.15s ease;
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  &--disabled {
+    opacity: 0.4;
+    background: v.$slate-50;
+    border-color: v.$border;
+    color: v.$slate-400;
+
+    &:hover {
+      .channel-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+  }
+
+  &--connected {
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+
+    &:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.15);
+      z-index: 20;
+
+      .channel-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    &.channel--facebook {
+      background: #e7f3ff;
+      border-color: #bad9ff;
+      color: #1877f2;
+
+      &:hover {
+        background: #1877f2;
+        color: #ffffff;
+        border-color: #1877f2;
+      }
+    }
+
+    &.channel--tiktok {
+      background: #0f172a;
+      border-color: #0f172a;
+      color: #ffffff;
+
+      &:hover {
+        background: #020617;
+        box-shadow: 0 3px 10px rgba(0, 242, 254, 0.35);
+      }
+    }
+
+    &.channel--youtube {
+      background: #ffebeb;
+      border-color: #ffcccc;
+      color: #ff0000;
+
+      &:hover {
+        background: #ff0000;
+        color: #ffffff;
+        border-color: #ff0000;
+      }
+    }
+  }
+
+  .channel-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 70;
+    background: v.$slate-900;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: v.$radius-md;
+    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.4);
+    padding: 8px 12px;
+    width: max-content;
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+    line-height: 1.35;
+    text-align: left;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px 5px 0 5px;
+      border-style: solid;
+      border-color: v.$slate-900 transparent transparent transparent;
+    }
+
+    &__header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+
+      strong {
+        color: #ffffff;
+        font-weight: 600;
+      }
+    }
+
+    &__badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: v.$radius-xs;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+
+      &--muted {
+        background: rgba(148, 163, 184, 0.15);
+        color: v.$slate-400;
+        border-color: rgba(148, 163, 184, 0.25);
+      }
+    }
+
+    &__url {
+      color: v.$slate-300;
+      font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+      font-size: 10.5px;
+      word-break: break-all;
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    &__cta {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #38bdf8;
+      font-weight: 500;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+  }
 }
 
-.channel--connected {
-  color: v.$brand-primary;
-  background: v.$brand-light;
-  border-color: v.$status-published-border;
+.channel-field-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .channel-icon--facebook {
+    color: #1877f2;
+  }
+  .channel-icon--tiktok {
+    color: #0f172a;
+  }
+  .channel-icon--youtube {
+    color: #ff0000;
+  }
+
+  .channel-preview-link {
+    margin-left: auto;
+    font-size: 11.5px;
+    color: v.$brand-primary;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+      color: v.$brand-hover;
+    }
+  }
 }
 
 .date-cell {
@@ -680,6 +869,60 @@ td:has(> .table-marker) {
     font-weight: 600;
     color: v.$text-main;
   }
+
+  &--drawer {
+    flex-direction: column;
+    text-align: center;
+    padding: 32px 20px;
+    gap: 16px;
+    background: v.$slate-50;
+    border: 2px dashed v.$border-strong;
+    border-radius: v.$radius-xl;
+    margin-bottom: 0;
+
+    &:hover {
+      border-color: v.$brand-primary;
+      background: v.$brand-light;
+    }
+
+    > span {
+      padding: 14px;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    > div {
+      max-width: 400px;
+
+      h4 {
+        font-size: 15px;
+        font-weight: 600;
+        color: v.$text-main;
+        margin: 0 0 4px 0;
+      }
+
+      p {
+        font-size: 12.5px;
+        color: v.$text-muted;
+        line-height: 1.5;
+        margin: 0;
+      }
+    }
+
+    > label {
+      margin-left: 0;
+      cursor: pointer;
+    }
+  }
+}
+
+.panel__actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .upload-progress-card {
