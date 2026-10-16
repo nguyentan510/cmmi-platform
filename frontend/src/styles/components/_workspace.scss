@@ -636,6 +636,119 @@ td:has(> .table-marker) {
   }
 }
 
+.upload-progress-card {
+  margin-bottom: 24px;
+  background: v.$surface;
+  border: 1px solid v.$border-strong;
+  border-radius: v.$radius-lg;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  animation: fadeIn 0.2s ease-in-out;
+
+  &--compact {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    background: v.$slate-50;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+
+    .spin {
+      color: v.$brand-primary;
+      animation: spin 1s linear infinite;
+      flex-shrink: 0;
+    }
+  }
+
+  &__filename {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: v.$text-main;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__badge {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: v.$radius-sm;
+    background: v.$brand-light;
+    color: v.$brand-primary;
+    white-space: nowrap;
+    border: 1px solid v.$status-published-border;
+  }
+
+  &__bar-track {
+    width: 100%;
+    height: 8px;
+    background: v.$slate-100;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  &__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 9999px;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: v.$text-muted;
+  }
+
+  &__bytes {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  &__status {
+    font-weight: 500;
+    color: v.$text-body;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .media-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

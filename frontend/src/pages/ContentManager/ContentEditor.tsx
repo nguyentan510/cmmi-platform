@@ -1,12 +1,14 @@
 import { useCallback, useState, type FormEvent } from 'react';
-import { ImagePlus, Upload } from 'lucide-react';
+import { ImagePlus, Loader2, Upload } from 'lucide-react';
 import { ErrorBox, Modal } from '../../components/Shared';
 import {
   type Api,
   type Content,
   type ContentInput,
   type Status,
+  type UploadProgress,
   errorMessage,
+  formatBytes,
   localDateTime,
   result,
   uploadMedia,
@@ -34,6 +36,13 @@ export default function ContentEditor({
   const [selected, setSelected] = useState<string[]>(content?.media_assets.map((m) => m.id) ?? []);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    fileName: string;
+    loaded: number;
+    total: number;
+    percent: number;
+    stage: 'preparing' | 'uploading' | 'verifying' | 'done';
+  } | null>(null);
   const [error, setError] = useState('');
   const [mediaOffset, setMediaOffset] = useState(0);
   const library = useLoad(
@@ -82,14 +91,30 @@ export default function ContentEditor({
     if (!file) return;
     setUploading(true);
     setError('');
+    setUploadProgress({
+      fileName: file.name,
+      loaded: 0,
+      total: file.size,
+      percent: 0,
+      stage: 'preparing',
+    });
     try {
-      const item = await uploadMedia(api, file);
+      const item = await uploadMedia(api, file, (p: UploadProgress) => {
+        setUploadProgress({
+          fileName: file.name,
+          loaded: p.loaded,
+          total: p.total,
+          percent: p.percent,
+          stage: p.stage ?? 'uploading',
+        });
+      });
       setSelected((previous) => [...previous, item.id]);
       library.reload();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   }
   return (
@@ -184,6 +209,45 @@ export default function ContentEditor({
               <p>No active media yet. Upload your first asset below.</p>
             )}
           </div>
+          {uploadProgress && (
+            <div
+              className="upload-progress-card upload-progress-card--compact"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="upload-progress-card__header">
+                <div className="upload-progress-card__info">
+                  <Loader2 size={14} className="spin" />
+                  <span className="upload-progress-card__filename" title={uploadProgress.fileName}>
+                    {uploadProgress.fileName}
+                  </span>
+                </div>
+                <span className="upload-progress-card__badge">
+                  {uploadProgress.stage === 'preparing' && 'Khởi tạo...'}
+                  {uploadProgress.stage === 'uploading' && `${uploadProgress.percent}%`}
+                  {uploadProgress.stage === 'verifying' && 'Xác thực...'}
+                  {uploadProgress.stage === 'done' && '100%'}
+                </span>
+              </div>
+              <div className="upload-progress-card__bar-track">
+                <div
+                  className="upload-progress-card__bar-fill"
+                  style={{ width: `${Math.max(4, uploadProgress.percent)}%` }}
+                />
+              </div>
+              <div className="upload-progress-card__footer">
+                <span className="upload-progress-card__bytes">
+                  {formatBytes(uploadProgress.loaded)} / {formatBytes(uploadProgress.total)}
+                </span>
+                <span className="upload-progress-card__status">
+                  {uploadProgress.stage === 'preparing' && 'Đang cấp quyền...'}
+                  {uploadProgress.stage === 'uploading' && `Đang tải lên (${uploadProgress.percent}%)`}
+                  {uploadProgress.stage === 'verifying' && 'Đang xác thực...'}
+                  {uploadProgress.stage === 'done' && 'Hoàn tất!'}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="attachment-actions">
             <label className="button button--secondary">
               <Upload size={15} />

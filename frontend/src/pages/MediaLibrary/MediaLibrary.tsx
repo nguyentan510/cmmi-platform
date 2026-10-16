@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
-import { ImagePlus, Trash2, Upload } from 'lucide-react';
+import { ImagePlus, Loader2, Trash2, Upload } from 'lucide-react';
 import { Empty, ErrorBox, MediaPreview, Pager } from '../../components/Shared';
 import {
   type Api,
   type Media,
+  type UploadProgress,
   dateText,
   errorMessage,
   formatBytes,
@@ -12,12 +13,23 @@ import {
 } from '../../services/api';
 import { useLoad } from '../../services/useLoad';
 
+interface UploadState {
+  fileIndex: number;
+  totalFiles: number;
+  fileName: string;
+  loaded: number;
+  total: number;
+  percent: number;
+  stage: 'preparing' | 'uploading' | 'verifying' | 'done';
+}
+
 export default function MediaLibrary({ api }: { api: Api }) {
   const [filter, setFilter] = useState('active');
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<UploadState | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const items = useLoad(
     () =>
@@ -40,7 +52,29 @@ export default function MediaLibrary({ api }: { api: Api }) {
     setError('');
     setMessage('');
     try {
-      for (const file of files) await uploadMedia(api, file);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress({
+          fileIndex: i + 1,
+          totalFiles: files.length,
+          fileName: file.name,
+          loaded: 0,
+          total: file.size,
+          percent: 0,
+          stage: 'preparing',
+        });
+        await uploadMedia(api, file, (progress: UploadProgress) => {
+          setUploadProgress({
+            fileIndex: i + 1,
+            totalFiles: files.length,
+            fileName: file.name,
+            loaded: progress.loaded,
+            total: progress.total,
+            percent: progress.percent,
+            stage: progress.stage ?? 'uploading',
+          });
+        });
+      }
       setMessage(`${files.length} asset${files.length > 1 ? 's' : ''} uploaded and verified.`);
       items.reload();
     } catch (e) {
@@ -48,6 +82,7 @@ export default function MediaLibrary({ api }: { api: Api }) {
       items.reload();
     } finally {
       setBusy(false);
+      setUploadProgress(null);
       if (input.current) input.current.value = '';
     }
   }
@@ -100,6 +135,44 @@ export default function MediaLibrary({ api }: { api: Api }) {
           />
         </label>
       </div>
+      {uploadProgress && (
+        <div className="upload-progress-card" role="status" aria-live="polite">
+          <div className="upload-progress-card__header">
+            <div className="upload-progress-card__info">
+              <Loader2 size={16} className="spin" />
+              <span className="upload-progress-card__filename" title={uploadProgress.fileName}>
+                {uploadProgress.totalFiles > 1
+                  ? `[${uploadProgress.fileIndex}/${uploadProgress.totalFiles}] `
+                  : ''}
+                {uploadProgress.fileName}
+              </span>
+            </div>
+            <span className="upload-progress-card__badge">
+              {uploadProgress.stage === 'preparing' && 'Khởi tạo...'}
+              {uploadProgress.stage === 'uploading' && `${uploadProgress.percent}%`}
+              {uploadProgress.stage === 'verifying' && 'Xác thực R2...'}
+              {uploadProgress.stage === 'done' && '100%'}
+            </span>
+          </div>
+          <div className="upload-progress-card__bar-track">
+            <div
+              className="upload-progress-card__bar-fill"
+              style={{ width: `${Math.max(4, uploadProgress.percent)}%` }}
+            />
+          </div>
+          <div className="upload-progress-card__footer">
+            <span className="upload-progress-card__bytes">
+              {formatBytes(uploadProgress.loaded)} / {formatBytes(uploadProgress.total)}
+            </span>
+            <span className="upload-progress-card__status">
+              {uploadProgress.stage === 'preparing' && 'Đang xin cấp phép lưu trữ...'}
+              {uploadProgress.stage === 'uploading' && `Đang tải lên Cloudflare R2 (${uploadProgress.percent}%)`}
+              {uploadProgress.stage === 'verifying' && 'Đang kiểm tra toàn vẹn tệp tin...'}
+              {uploadProgress.stage === 'done' && 'Tải lên hoàn tất!'}
+            </span>
+          </div>
+        </div>
+      )}
       <ErrorBox message={error || items.error} />
       {message && (
         <div className="notice notice--success" role="status">

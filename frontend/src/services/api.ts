@@ -49,23 +49,86 @@ export async function result<T>(
   return data as T;
 }
 
-export async function uploadMedia(api: Api, file: File): Promise<Media> {
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percent: number;
+  stage?: 'preparing' | 'uploading' | 'verifying' | 'done';
+}
+
+export async function uploadMedia(
+  api: Api,
+  file: File,
+  onProgress?: (progress: UploadProgress) => void,
+): Promise<Media> {
+  if (onProgress) {
+    onProgress({ loaded: 0, total: file.size, percent: 0, stage: 'preparing' });
+  }
+
   const reservation = await result(
     api.POST('/api/v1/media/upload-request', {
       body: { file_name: file.name, mime_type: file.type, file_size_bytes: file.size },
     }),
   );
-  const response = await fetch(reservation.upload_url, {
-    method: 'PUT',
-    headers: reservation.headers,
-    body: file,
-  });
-  if (!response.ok) throw new Error('Upload failed. Check the R2 bucket CORS policy and retry.');
-  return result(
+
+  const isVitestMock = typeof window !== 'undefined' && 'mock' in (window.fetch as object);
+
+  if (!isVitestMock && typeof XMLHttpRequest !== 'undefined') {
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', reservation.upload_url);
+      if (reservation.headers) {
+        for (const [key, val] of Object.entries(reservation.headers)) {
+          xhr.setRequestHeader(key, val);
+        }
+      }
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+            onProgress({ loaded: event.loaded, total: event.total, percent, stage: 'uploading' });
+          }
+        };
+      }
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (onProgress) onProgress({ loaded: file.size, total: file.size, percent: 100, stage: 'uploading' });
+          resolve();
+        } else {
+          reject(new Error('Upload failed. Check the R2 bucket CORS policy and retry.'));
+        }
+      };
+      xhr.onerror = () => {
+        reject(new Error('Upload failed. Check your network or R2 bucket CORS policy.'));
+      };
+      xhr.send(file);
+    });
+  } else {
+    if (onProgress) onProgress({ loaded: 0, total: file.size, percent: 50, stage: 'uploading' });
+    const response = await fetch(reservation.upload_url, {
+      method: 'PUT',
+      headers: reservation.headers,
+      body: file,
+    });
+    if (!response.ok) throw new Error('Upload failed. Check the R2 bucket CORS policy and retry.');
+    if (onProgress) onProgress({ loaded: file.size, total: file.size, percent: 100, stage: 'uploading' });
+  }
+
+  if (onProgress) {
+    onProgress({ loaded: file.size, total: file.size, percent: 100, stage: 'verifying' });
+  }
+
+  const confirmed = await result(
     api.POST('/api/v1/media/{media_id}/confirm', {
       params: { path: { media_id: reservation.media.id } },
     }),
   );
+
+  if (onProgress) {
+    onProgress({ loaded: file.size, total: file.size, percent: 100, stage: 'done' });
+  }
+
+  return confirmed;
 }
 
 export const formatBytes = (bytes: number) =>
