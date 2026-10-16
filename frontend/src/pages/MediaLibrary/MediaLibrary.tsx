@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { ImagePlus, Loader2, Trash2, Upload } from 'lucide-react';
-import { Empty, ErrorBox, MediaPreview, Pager } from '../../components/Shared';
+import { ImagePlus, Loader2, Maximize2, Trash2, Upload } from 'lucide-react';
+import { Empty, ErrorBox, MediaPreview, Modal, Pager } from '../../components/Shared';
 import {
   type Api,
   type Media,
@@ -25,6 +25,8 @@ interface UploadState {
 
 export default function MediaLibrary({ api }: { api: Api }) {
   const [filter, setFilter] = useState('active');
+  const [viewRatio, setViewRatio] = useState<'contain' | 'portrait' | 'landscape' | 'square'>('contain');
+  const [inspectingMedia, setInspectingMedia] = useState<Media | null>(null);
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -185,45 +187,84 @@ export default function MediaLibrary({ api }: { api: Api }) {
             <h2>Your media collection</h2>
             <p>Original files, ready for their next chapter.</p>
           </div>
-          <select
-            aria-label="Media status"
-            value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value);
-              setOffset(0);
-            }}
-          >
-            <option value="active">Active assets</option>
-            <option value="cleaned">Cleaned · storage released</option>
-            <option value="all">All assets</option>
-          </select>
+          <div className="filter-group">
+            <select
+              aria-label="Aspect ratio view"
+              value={viewRatio}
+              onChange={(e) =>
+                setViewRatio(e.target.value as 'contain' | 'portrait' | 'landscape' | 'square')
+              }
+            >
+              <option value="contain">Khung hình: Tự nhiên (Contain)</option>
+              <option value="portrait">Khung hình: Dọc 9:16 (Shorts/Reels)</option>
+              <option value="landscape">Khung hình: Ngang 16:9 (Video)</option>
+              <option value="square">Khung hình: Vuông 1:1 (Post)</option>
+            </select>
+            <select
+              aria-label="Media status"
+              value={filter}
+              onChange={(e) => {
+                setFilter(e.target.value);
+                setOffset(0);
+              }}
+            >
+              <option value="active">Active assets</option>
+              <option value="cleaned">Cleaned · storage released</option>
+              <option value="all">All assets</option>
+            </select>
+          </div>
         </div>
         {items.loading ? (
           <div className="loading">Opening your library…</div>
         ) : items.data?.length ? (
-          <div className="media-grid">
+          <div className={`media-grid ${viewRatio === 'portrait' ? 'media-grid--portrait' : ''}`}>
             {items.data.map((item) => (
-              <article className="media-card" key={item.id}>
+              <article className={`media-card media-card--${viewRatio}`} key={item.id}>
                 <div className="media-card__preview">
                   <MediaPreview media={item} />
                   <span className="media-card__type">{item.media_type}</span>
+                  <button
+                    type="button"
+                    className="media-card__expand"
+                    aria-label={`Xem chi tiết ${item.file_name}`}
+                    title="Xem toàn màn hình (Lightbox)"
+                    onClick={() => setInspectingMedia(item)}
+                  >
+                    <Maximize2 size={14} />
+                  </button>
                 </div>
                 <div className="media-card__body">
-                  <h3 title={item.file_name}>{item.file_name}</h3>
+                  <h3
+                    title={item.file_name}
+                    onClick={() => setInspectingMedia(item)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {item.file_name}
+                  </h3>
                   <p>
                     {formatBytes(item.file_size_bytes)} <span>·</span>{' '}
                     {item.is_cleaned ? 'Cleaned' : item.upload_confirmed ? 'Ready' : 'Pending'}
                   </p>
                   <div>
                     <small>{dateText(item.created_at)}</small>
-                    {!item.is_cleaned && (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <button
-                        aria-label={`Delete ${item.file_name}`}
-                        onClick={() => void remove(item)}
+                        type="button"
+                        aria-label={`Xem chi tiết ${item.file_name}`}
+                        title="Xem toàn màn hình"
+                        onClick={() => setInspectingMedia(item)}
                       >
-                        <Trash2 size={15} />
+                        <Maximize2 size={15} />
                       </button>
-                    )}
+                      {!item.is_cleaned && (
+                        <button
+                          aria-label={`Delete ${item.file_name}`}
+                          onClick={() => void remove(item)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </article>
@@ -236,6 +277,47 @@ export default function MediaLibrary({ api }: { api: Api }) {
         )}
         <Pager offset={offset} length={items.data?.length ?? 0} onChange={setOffset} />
       </section>
+      {inspectingMedia && (
+        <Modal title={inspectingMedia.file_name} onClose={() => setInspectingMedia(null)}>
+          <div className="media-lightbox">
+            <div className="media-lightbox__stage">
+              {inspectingMedia.media_type === 'VIDEO' ? (
+                <video
+                  controls
+                  autoPlay
+                  playsInline
+                  src={inspectingMedia.public_url}
+                  aria-label={inspectingMedia.file_name}
+                />
+              ) : (
+                <img src={inspectingMedia.public_url} alt={inspectingMedia.file_name} />
+              )}
+            </div>
+            <div className="media-lightbox__meta">
+              <div>
+                <span>Loại tệp:</span> <strong>{inspectingMedia.media_type} ({inspectingMedia.mime_type})</strong>
+              </div>
+              <div>
+                <span>Dung lượng:</span> <strong>{formatBytes(inspectingMedia.file_size_bytes)}</strong>
+              </div>
+              <div>
+                <span>Ngày tạo:</span> <strong>{dateText(inspectingMedia.created_at)}</strong>
+              </div>
+              <div>
+                <a
+                  href={inspectingMedia.public_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={inspectingMedia.file_name}
+                  className="button button--secondary"
+                >
+                  Tải tệp gốc
+                </a>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

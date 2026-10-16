@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, CircleAlert, Inbox, X } from 'lucide-react';
 import type { Media, Status } from '../services/api';
 
@@ -62,15 +62,65 @@ export function Pager({
     </div>
   );
 }
-export function MediaPreview({ media }: { media: Media }) {
-  return media.is_cleaned ? (
-    <div className="media-placeholder">Storage released</div>
-  ) : !media.upload_confirmed ? (
-    <div className="media-placeholder">Awaiting upload</div>
-  ) : media.media_type === 'VIDEO' ? (
-    <video controls preload="metadata" src={media.public_url} aria-label={media.file_name} />
-  ) : (
-    <img src={media.public_url} alt={media.file_name} loading="lazy" />
+export function MediaPreview({
+  media,
+  onRatioDetect,
+}: {
+  media: Media;
+  onRatioDetect?: (ratio: string) => void;
+}) {
+  const [ratio, setRatio] = useState<string | null>(null);
+
+  const handleVideoMeta = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const v = e.currentTarget;
+    if (v.videoWidth && v.videoHeight) {
+      const r = v.videoWidth / v.videoHeight;
+      const detected =
+        r < 0.65 ? '9:16' : r < 0.85 ? '4:5' : r <= 1.2 ? '1:1' : r > 1.55 ? '16:9' : '4:3';
+      setRatio(detected);
+      if (onRatioDetect) onRatioDetect(detected);
+    }
+  };
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth && img.naturalHeight) {
+      const r = img.naturalWidth / img.naturalHeight;
+      const detected =
+        r < 0.65 ? '9:16' : r < 0.85 ? '4:5' : r <= 1.2 ? '1:1' : r > 1.55 ? '16:9' : '4:3';
+      setRatio(detected);
+      if (onRatioDetect) onRatioDetect(detected);
+    }
+  };
+
+  if (media.is_cleaned) {
+    return <div className="media-placeholder">Storage released</div>;
+  }
+  if (!media.upload_confirmed) {
+    return <div className="media-placeholder">Awaiting upload</div>;
+  }
+
+  return (
+    <>
+      {media.media_type === 'VIDEO' ? (
+        <video
+          controls
+          preload="metadata"
+          src={media.public_url}
+          aria-label={media.file_name}
+          onLoadedMetadata={handleVideoMeta}
+          playsInline
+        />
+      ) : (
+        <img
+          src={media.public_url}
+          alt={media.file_name}
+          loading="lazy"
+          onLoad={handleImageLoad}
+        />
+      )}
+      {ratio && <span className="media-card__ratio">{ratio}</span>}
+    </>
   );
 }
 export function Modal({
