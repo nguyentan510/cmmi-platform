@@ -1,0 +1,10 @@
+@mixin mobile {
+  @media (max-width: 760px) {
+    @content;
+  }
+}
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

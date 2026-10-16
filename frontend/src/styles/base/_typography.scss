@@ -1,0 +1,58 @@
+@use '../abstracts/variables' as v;
+body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: v.$ink;
+  background: v.$canvas;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+h1 {
+  font-size: 30px;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 18px;
+}
+h3 {
+  font-size: 16px;
+}
+code {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+}
+.eyebrow {
+  color: #7b887c;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+.caption {
+  color: #7b847d;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 18px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

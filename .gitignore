@@ -1,0 +1,30 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.superpowers/
+*.tsbuildinfo
+# Local credentials and operational artifacts
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+.envrc
+# Agent execution records stay local; public technical docs are retained.
+docs/progress.md
+docs/superpowers/

@@ -1,0 +1,87 @@
+from fastapi import Request
+from fastapi.responses import PlainTextResponse
+from scalar_fastapi import get_scalar_api_reference
+
+from app.api.router import Router
+from app.schemas import Health
+
+router = Router(tags=["Service and documentation"])
+SHORT_GUIDE = """# CMMI API
+
+Content and Media Management Infrastructure for creators and automation.
+
+- [OpenAPI contract](/openapi.json)
+- [Interactive Scalar reference](/docs)
+- [Full agent guide](/llms-full.txt)
+
+## Authentication
+Use `X-API-Key: cmmi_live_...` or `Authorization: Bearer <JWT>`.
+Keys are shown once, scoped and owned by their issuing user. CREATOR access is owner-only.
+
+## Content workflow
+Create with POST /api/v1/contents. Channel IDs default to empty strings.
+Read scheduled work with GET /api/v1/contents?status=SCHEDULED.
+After externally posting, PATCH /api/v1/contents/{id} with status PUBLISHED and
+fb_post_id, tiktok_post_id, youtube_post_id. The server records published_at.
+Send timezone-aware UTC scheduled_at (for example 2026-10-20T02:00:00Z).
+The API stores scheduling metadata; your automation is responsible for posting.
+"""
+FULL_GUIDE = (
+    SHORT_GUIDE
+    + """
+## Direct uploads
+1. POST /api/v1/media/upload-request with file_name, mime_type and file_size_bytes.
+2. PUT the original bytes directly to upload_url using the returned headers (900 seconds).
+3. POST /api/v1/media/{id}/confirm. The server verifies R2 HEAD metadata.
+4. Include confirmed IDs in content media_ids; array order controls display order.
+Do not attach pending, foreign or cleaned media. Unsupported HTML/SVG is rejected.
+
+## Cleanup
+Admin GET/PUT /api/v1/settings/cleanup configures auto_clean_media, retention_days
+(1..365, default 7), cron_expression (default 0 2 * * *, UTC).
+POST /api/v1/settings/cleanup/trigger runs immediately, respecting the enable flag.
+Only expired published references are eligible; draft, scheduled, archived and recent
+references protect shared objects. Successful deletion clears public_url, preserves
+the database record and sets is_cleaned. Failures are retried on later runs.
+Never treat a cleaned URL as playable media.
+
+## Permissions and pagination
+Scopes: contents:read/write, media:read/write, keys:read/write,
+users:read/write and settings:read/write. Only admins have users/settings privileges.
+GET /api/v1/contents and /media accept offset and limit (1..100).
+Content filters: status, search, channel=facebook|tiktok|youtube.
+Media filter: is_cleaned=true|false. Users pagination also accepts offset/limit.
+Admin-only POST /api/v1/users creates creators. PATCH /api/v1/users/{id} changes access.
+DELETE /api/v1/api-keys/{id} revokes a key immediately.
+
+## Errors and retries
+401 invalid/expired/revoked credentials; 403 role/scope denial; 404 inaccessible/missing
+resource; 409 state conflict or upload not confirmed; 422 contract validation;
+502 R2 unavailable. Retry reads safely; inspect state before retrying writes.
+Content deletion removes its links, not R2 objects. Manual media deletion is blocked
+while referenced. No endpoint posts to Facebook, TikTok or YouTube automatically.
+"""
+)
+
+
+@router.get("/health", response_model=Health, summary="Check API process liveness")
+async def health():
+    """Process liveness only; this does not probe Neon or R2 connectivity."""
+    return Health(status="ok")
+
+
+@router.get("/docs", include_in_schema=False)
+async def scalar(request: Request):
+    return get_scalar_api_reference(openapi_url=request.app.openapi_url, title="CMMI API reference")
+
+
+@router.get("/llms.txt", response_class=PlainTextResponse, summary="Read the concise AI integration guide")
+async def llms():
+    """Plain Markdown authentication and content automation instructions, with links to the full contract."""
+    return SHORT_GUIDE
+
+
+@router.get("/llms-full.txt", response_class=PlainTextResponse, summary="Read the full AI integration guide")
+async def llms_full():
+    """Plain Markdown guide covering upload confirmation, scoped keys, retention, filters and error handling."""
+    return FULL_GUIDE

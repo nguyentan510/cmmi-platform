@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "cmmi-backend"
+version = "0.1.0"
+description = "Content and Media Management Infrastructure"
+authors = ["CMMI maintainers"]
+license = "MIT"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = ">=0.115,<1"
+uvicorn = {version = ">=0.34,<1", extras = ["standard"]}
+sqlalchemy = {version = ">=2.0.36,<2.1", extras = ["asyncio"]}
+asyncpg = ">=0.30,<1"
+alembic = ">=1.14,<2"
+pydantic = {version = ">=2.10,<3", extras = ["email"]}
+pydantic-settings = ">=2.7,<3"
+boto3 = ">=1.35,<2"
+PyJWT = ">=2.10,<3"
+pwdlib = {version = ">=0.2,<1", extras = ["argon2"]}
+apscheduler = ">=3.11,<4"
+scalar-fastapi = ">=1.0,<2"
+aiosqlite = ">=0.20,<1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.3,<10"
+pytest-asyncio = ">=0.25,<2"
+httpx = ">=0.28,<1"
+ruff = ">=0.9,<1"
+pyyaml = ">=6,<7"
+
+[tool.poetry.scripts]
+export-schema = "app.export_schema:main"
+bootstrap-admin = "app.bootstrap:main"
+
+[build-system]
+requires = ["poetry-core>=2.0,<3"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

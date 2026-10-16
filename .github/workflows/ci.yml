@@ -1,0 +1,105 @@
+name: CMMI verification
+on: [push, pull_request]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install poetry==2.5.1
+      - run: poetry install --no-interaction
+        working-directory: backend
+      - run: poetry run ruff check app tests
+        working-directory: backend
+      - run: poetry run pytest -q
+        working-directory: backend
+      - run: poetry run export-schema --check
+        working-directory: backend
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: cmmi_test
+          POSTGRES_USER: cmmi_test
+          POSTGRES_PASSWORD: fixture-only-password
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U cmmi_test" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://cmmi_test:fixture-only-password@localhost:5432/cmmi_test
+      CMMI_TEST_DATABASE_URL: postgresql+asyncpg://cmmi_test:fixture-only-password@localhost:5432/cmmi_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install poetry==2.5.1
+      - run: poetry install --no-interaction
+        working-directory: backend
+      - run: poetry run alembic upgrade head
+        working-directory: backend
+      - run: poetry run alembic downgrade base
+        working-directory: backend
+      - run: poetry run alembic upgrade head
+        working-directory: backend
+      - run: poetry run alembic check
+        working-directory: backend
+      - run: poetry run pytest -q tests/test_auth.py tests/test_content_media.py tests/test_cleanup.py
+        working-directory: backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run check:api
+        working-directory: frontend
+      - run: npm test
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - run: npm audit --audit-level=high
+        working-directory: frontend
+
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file .env.example config --quiet
+      - run: docker compose --env-file .env.example build
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: pip install poetry==2.5.1
+      - run: poetry install --no-interaction
+        working-directory: backend
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: CMMI_TEST_PYTHON=$(poetry -C backend env info --executable) npm --prefix frontend run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: frontend/test-results/

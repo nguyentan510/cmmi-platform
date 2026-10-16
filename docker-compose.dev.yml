@@ -1,0 +1,8 @@
+# Opt-in loopback ports for testing built containers without publishing a tunnel.
+services:
+  backend:
+    ports: ["127.0.0.1:8000:8000"]
+  frontend:
+    ports: ["127.0.0.1:8080:80"]
+  cloudflared:
+    profiles: [tunnel]

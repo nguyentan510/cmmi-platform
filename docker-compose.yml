@@ -1,0 +1,43 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    init: true
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
+      DATABASE_DIRECT_URL: ${DATABASE_DIRECT_URL:-}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY}
+      TOKEN_EXPIRE_MINUTES: ${TOKEN_EXPIRE_MINUTES:-60}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-[]}
+      R2_ENDPOINT_URL: ${R2_ENDPOINT_URL:?Set R2_ENDPOINT_URL}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?Set R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?Set R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:?Set R2_BUCKET_NAME}
+      R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN:?Set R2_PUBLIC_DOMAIN}
+    networks: [cmmi_net]
+    security_opt: [no-new-privileges:true]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [cmmi_net]
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: [tunnel, --no-autoupdate, run]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks: [cmmi_net]
+
+networks:
+  cmmi_net:
+    driver: bridge
