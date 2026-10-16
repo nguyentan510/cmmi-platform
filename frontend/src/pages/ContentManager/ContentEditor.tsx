@@ -1,10 +1,20 @@
-import { useCallback, useState, type FormEvent } from 'react';
-import { ImagePlus, Loader2, Upload } from 'lucide-react';
-import { ErrorBox, Modal } from '../../components/Shared';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Layers3,
+  Loader2,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
+import { Drawer, ErrorBox, VideoThumbnail } from '../../components/Shared';
 import {
   type Api,
   type Content,
   type ContentInput,
+  type Media,
   type Status,
   type UploadProgress,
   errorMessage,
@@ -14,6 +24,7 @@ import {
   uploadMedia,
 } from '../../services/api';
 import { useLoad } from '../../services/useLoad';
+import MediaPickerModal from './MediaPickerModal';
 
 export default function ContentEditor({
   api,
@@ -36,6 +47,7 @@ export default function ContentEditor({
   const [selected, setSelected] = useState<string[]>(content?.media_assets.map((m) => m.id) ?? []);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{
     fileName: string;
     loaded: number;
@@ -44,7 +56,15 @@ export default function ContentEditor({
     stage: 'preparing' | 'uploading' | 'verifying' | 'done';
   } | null>(null);
   const [error, setError] = useState('');
-  const [mediaOffset, setMediaOffset] = useState(0);
+  const [mediaOffset] = useState(0);
+
+  // Store known media details so we can render visual cards
+  const [knownMedia, setKnownMedia] = useState<Map<string, Media>>(() => {
+    const map = new Map<string, Media>();
+    content?.media_assets?.forEach((m) => map.set(m.id, m));
+    return map;
+  });
+
   const library = useLoad(
     () =>
       result(
@@ -54,7 +74,19 @@ export default function ContentEditor({
       ),
     [api, mediaOffset],
   );
+
+  useEffect(() => {
+    if (library.data?.length) {
+      setKnownMedia((prev) => {
+        const updated = new Map(prev);
+        library.data?.forEach((m) => updated.set(m.id, m));
+        return updated;
+      });
+    }
+  }, [library.data]);
+
   const close = useCallback(onClose, [onClose]);
+
   async function save(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -87,6 +119,7 @@ export default function ContentEditor({
       setBusy(false);
     }
   }
+
   async function upload(file?: File) {
     if (!file) return;
     setUploading(true);
@@ -108,6 +141,7 @@ export default function ContentEditor({
           stage: p.stage ?? 'uploading',
         });
       });
+      setKnownMedia((prev) => new Map(prev).set(item.id, item));
       setSelected((previous) => [...previous, item.id]);
       library.reload();
     } catch (e) {
@@ -117,205 +151,311 @@ export default function ContentEditor({
       setUploadProgress(null);
     }
   }
+
+  const moveItem = (index: number, direction: 'left' | 'right') => {
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= selected.length) return;
+    setSelected((prev) => {
+      const next = [...prev];
+      const temp = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = temp;
+      return next;
+    });
+  };
+
   return (
-    <Modal title={content ? 'Edit your story' : 'Create a new story'} onClose={close}>
-      <form onSubmit={save} className="editor">
-        <ErrorBox message={error || library.error} />
-        <label>
-          Title
-          <input
-            autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            maxLength={255}
-            placeholder="Give your next story a name"
-          />
-        </label>
-        <label>
-          Body
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={6}
-            placeholder="Start with an idea… Markdown is welcome."
-          />
-        </label>
-        <div className="form-grid">
+    <>
+      <Drawer title={content ? 'Edit your story' : 'Create a new story'} onClose={close}>
+        <form onSubmit={save} className="editor editor--drawer">
+          <ErrorBox message={error || library.error} />
           <label>
-            Status
-            <select value={status} onChange={(e) => setStatus(e.target.value as Status)}>
-              {['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'].map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Scheduled at · local time
+            Title
             <input
-              type="datetime-local"
-              value={scheduled}
-              onChange={(e) => setScheduled(e.target.value)}
-              required={status === 'SCHEDULED'}
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              maxLength={255}
+              placeholder="Give your next story a name"
             />
           </label>
-        </div>
-        <fieldset>
-          <legend>
-            <ImagePlus size={17} />
-            Media attachments{' '}
-            <small>{selected.length} selected · selection order is display order</small>
-          </legend>
-          <div className="attachment-list">
-            {content?.media_assets
-              .filter((m) => m.is_cleaned)
-              .map((item) => (
-                <label key={item.id} className="attachment">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(item.id)}
-                    onChange={() =>
-                      setSelected((previous) => previous.filter((id) => id !== item.id))
-                    }
-                  />
-                  {item.file_name}
-                  <small>Cleaned · history only</small>
-                </label>
-              ))}
-            {library.data
-              ?.filter((m) => m.upload_confirmed)
-              .map((item) => (
-                <label key={item.id} className="attachment">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(item.id)}
-                    onChange={(e) =>
-                      setSelected((previous) =>
-                        e.target.checked
-                          ? [...previous, item.id]
-                          : previous.filter((id) => id !== item.id),
-                      )
-                    }
-                  />
-                  <span>{item.file_name}</span>
-                  <small>
-                    {selected.includes(item.id)
-                      ? `#${selected.indexOf(item.id) + 1}`
-                      : item.media_type}
-                  </small>
-                </label>
-              ))}
-            {!library.loading && !library.data?.length && (
-              <p>No active media yet. Upload your first asset below.</p>
-            )}
-          </div>
-          {uploadProgress && (
-            <div
-              className="upload-progress-card upload-progress-card--compact"
-              role="status"
-              aria-live="polite"
-            >
-              <div className="upload-progress-card__header">
-                <div className="upload-progress-card__info">
-                  <Loader2 size={14} className="spin" />
-                  <span className="upload-progress-card__filename" title={uploadProgress.fileName}>
-                    {uploadProgress.fileName}
-                  </span>
-                </div>
-                <span className="upload-progress-card__badge">
-                  {uploadProgress.stage === 'preparing' && 'Khởi tạo...'}
-                  {uploadProgress.stage === 'uploading' && `${uploadProgress.percent}%`}
-                  {uploadProgress.stage === 'verifying' && 'Xác thực...'}
-                  {uploadProgress.stage === 'done' && '100%'}
-                </span>
-              </div>
-              <div className="upload-progress-card__bar-track">
-                <div
-                  className="upload-progress-card__bar-fill"
-                  style={{ width: `${Math.max(4, uploadProgress.percent)}%` }}
-                />
-              </div>
-              <div className="upload-progress-card__footer">
-                <span className="upload-progress-card__bytes">
-                  {formatBytes(uploadProgress.loaded)} / {formatBytes(uploadProgress.total)}
-                </span>
-                <span className="upload-progress-card__status">
-                  {uploadProgress.stage === 'preparing' && 'Đang cấp quyền...'}
-                  {uploadProgress.stage === 'uploading' && `Đang tải lên (${uploadProgress.percent}%)`}
-                  {uploadProgress.stage === 'verifying' && 'Đang xác thực...'}
-                  {uploadProgress.stage === 'done' && 'Hoàn tất!'}
-                </span>
-              </div>
-            </div>
-          )}
-          <div className="attachment-actions">
-            <label className="button button--secondary">
-              <Upload size={15} />
-              {uploading ? 'Uploading…' : 'Upload an asset'}
-              <input
-                className="sr-only"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime"
-                disabled={uploading}
-                onChange={(e) => void upload(e.target.files?.[0])}
-              />
-            </label>
-            <button
-              type="button"
-              disabled={!mediaOffset}
-              onClick={() => setMediaOffset(mediaOffset - 50)}
-            >
-              Previous assets
-            </button>
-            <button
-              type="button"
-              disabled={(library.data?.length ?? 0) < 50}
-              onClick={() => setMediaOffset(mediaOffset + 50)}
-            >
-              More assets
-            </button>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>
-            Distribution channels <small>Leave empty until your story goes live.</small>
-          </legend>
           <label>
-            Facebook Post
-            <input
-              value={facebook}
-              onChange={(e) => setFacebook(e.target.value)}
-              placeholder="Post ID or URL"
+            Body
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={6}
+              placeholder="Start with an idea… Markdown is welcome."
             />
           </label>
           <div className="form-grid">
             <label>
-              TikTok Post
-              <input
-                value={tiktok}
-                onChange={(e) => setTiktok(e.target.value)}
-                placeholder="Post ID or URL"
-              />
+              Status
+              <select value={status} onChange={(e) => setStatus(e.target.value as Status)}>
+                {['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
             </label>
             <label>
-              YouTube Post
+              Scheduled at · local time
               <input
-                value={youtube}
-                onChange={(e) => setYoutube(e.target.value)}
-                placeholder="Post ID or URL"
+                type="datetime-local"
+                value={scheduled}
+                onChange={(e) => setScheduled(e.target.value)}
+                required={status === 'SCHEDULED'}
               />
             </label>
           </div>
-        </fieldset>
-        <div className="modal__actions">
-          <button type="button" className="button button--secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="button button--primary" disabled={busy || uploading}>
-            {busy ? 'Saving…' : 'Save content'}
-          </button>
-        </div>
-      </form>
-    </Modal>
+
+          {/* Visual Media Attachments Section */}
+          <fieldset className="editor-fieldset">
+            <legend>
+              <ImagePlus size={17} />
+              Media attachments{' '}
+              <small>{selected.length} selected · selection order is display order</small>
+            </legend>
+
+            {selected.length === 0 ? (
+              <div
+                className="media-tray-empty"
+                onClick={() => setIsPickerOpen(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    setIsPickerOpen(true);
+                  }
+                }}
+              >
+                <div className="media-tray-empty__icon">
+                  <ImagePlus size={24} />
+                </div>
+                <div className="media-tray-empty__content">
+                  <strong>Chưa có media nào được đính kèm</strong>
+                  <p>Mở Thư viện Media để chọn trực quan hình ảnh hoặc video cho bài viết.</p>
+                </div>
+                <button
+                  type="button"
+                  className="button button--secondary button--sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPickerOpen(true);
+                  }}
+                >
+                  <Layers3 size={15} />
+                  Mở Thư viện chọn Media
+                </button>
+              </div>
+            ) : (
+              <div className="selected-media-section">
+                <div
+                  className="selected-media-tray"
+                  role="list"
+                  aria-label="Selected media attachments"
+                >
+                  {selected.map((id, index) => {
+                    const item = knownMedia.get(id);
+                    return (
+                      <div key={id} className="selected-media-card" role="listitem">
+                        <div className="selected-media-card__thumb">
+                          {item ? (
+                            item.media_type === 'VIDEO' ? (
+                              <VideoThumbnail src={item.public_url} alt={item.file_name} />
+                            ) : (
+                              <img src={item.public_url} alt={item.file_name} loading="lazy" />
+                            )
+                          ) : (
+                            <div className="media-placeholder">Media #{index + 1}</div>
+                          )}
+                        </div>
+
+                        <div className="selected-media-card__order" title={`Thứ tự #${index + 1}`}>
+                          #{index + 1}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="selected-media-card__remove"
+                          onClick={() => setSelected((prev) => prev.filter((itemId) => itemId !== id))}
+                          aria-label={`Gỡ bỏ ${item?.file_name ?? 'tệp'}`}
+                          title="Gỡ bỏ khỏi bài viết"
+                        >
+                          <X size={14} />
+                        </button>
+
+                        {selected.length > 1 && (
+                          <div className="selected-media-card__reorder">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => moveItem(index, 'left')}
+                              aria-label="Di chuyển lên trước"
+                              title="Di chuyển lên trước"
+                            >
+                              <ChevronLeft size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === selected.length - 1}
+                              onClick={() => moveItem(index, 'right')}
+                              aria-label="Di chuyển ra sau"
+                              title="Di chuyển ra sau"
+                            >
+                              <ChevronRight size={13} />
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="selected-media-card__scrim">
+                          <span className="selected-media-card__filename" title={item?.file_name}>
+                            {item?.file_name ?? `ID: ${id.slice(0, 8)}...`}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="selected-media-toolbar">
+                  <button
+                    type="button"
+                    className="button button--secondary button--sm"
+                    onClick={() => setIsPickerOpen(true)}
+                  >
+                    <ImagePlus size={14} />
+                    Quản lý / Chọn thêm Media ({selected.length})
+                  </button>
+                  <label className="button button--ghost button--sm">
+                    <Upload size={14} />
+                    {uploading ? 'Đang tải lên…' : 'Tải tệp mới'}
+                    <input
+                      className="sr-only"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime"
+                      disabled={uploading}
+                      onChange={(e) => void upload(e.target.files?.[0])}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="button button--ghost button--sm text-muted"
+                    onClick={() => setSelected([])}
+                  >
+                    <Trash2 size={13} />
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {uploadProgress && (
+              <div
+                className="upload-progress-card upload-progress-card--compact"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="upload-progress-card__header">
+                  <div className="upload-progress-card__info">
+                    <Loader2 size={14} className="spin" />
+                    <span
+                      className="upload-progress-card__filename"
+                      title={uploadProgress.fileName}
+                    >
+                      {uploadProgress.fileName}
+                    </span>
+                  </div>
+                  <span className="upload-progress-card__badge">
+                    {uploadProgress.stage === 'preparing' && 'Khởi tạo...'}
+                    {uploadProgress.stage === 'uploading' && `${uploadProgress.percent}%`}
+                    {uploadProgress.stage === 'verifying' && 'Xác thực...'}
+                    {uploadProgress.stage === 'done' && '100%'}
+                  </span>
+                </div>
+                <div className="upload-progress-card__bar-track">
+                  <div
+                    className="upload-progress-card__bar-fill"
+                    style={{ width: `${Math.max(4, uploadProgress.percent)}%` }}
+                  />
+                </div>
+                <div className="upload-progress-card__footer">
+                  <span className="upload-progress-card__bytes">
+                    {formatBytes(uploadProgress.loaded)} / {formatBytes(uploadProgress.total)}
+                  </span>
+                  <span className="upload-progress-card__status">
+                    {uploadProgress.stage === 'preparing' && 'Đang cấp quyền...'}
+                    {uploadProgress.stage === 'uploading' &&
+                      `Đang tải lên (${uploadProgress.percent}%)`}
+                    {uploadProgress.stage === 'verifying' && 'Đang xác thực...'}
+                    {uploadProgress.stage === 'done' && 'Hoàn tất!'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </fieldset>
+
+          <fieldset>
+            <legend>
+              Distribution channels <small>Leave empty until your story goes live.</small>
+            </legend>
+            <label>
+              Facebook Post
+              <input
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value)}
+                placeholder="Post ID or URL"
+              />
+            </label>
+            <div className="form-grid">
+              <label>
+                TikTok Post
+                <input
+                  value={tiktok}
+                  onChange={(e) => setTiktok(e.target.value)}
+                  placeholder="Post ID or URL"
+                />
+              </label>
+              <label>
+                YouTube Post
+                <input
+                  value={youtube}
+                  onChange={(e) => setYoutube(e.target.value)}
+                  placeholder="Post ID or URL"
+                />
+              </label>
+            </div>
+          </fieldset>
+
+          <div className="modal__actions drawer__actions">
+            <button type="button" className="button button--secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button className="button button--primary" disabled={busy || uploading}>
+              {busy ? 'Saving…' : 'Save content'}
+            </button>
+          </div>
+        </form>
+      </Drawer>
+
+      {/* Secondary Media Picker Modal */}
+      {isPickerOpen && (
+        <MediaPickerModal
+          api={api}
+          selectedIds={selected}
+          initialMedia={Array.from(knownMedia.values())}
+          onClose={() => setIsPickerOpen(false)}
+          onConfirm={(newSelectedIds, newMediaList) => {
+            setSelected(newSelectedIds);
+            setKnownMedia((prev) => {
+              const map = new Map(prev);
+              newMediaList.forEach((m) => map.set(m.id, m));
+              return map;
+            });
+          }}
+        />
+      )}
+    </>
   );
 }

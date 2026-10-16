@@ -1,5 +1,15 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, CircleAlert, Inbox, Play, Video, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  Inbox,
+  Maximize2,
+  Minimize2,
+  Play,
+  Video,
+  X,
+} from 'lucide-react';
 import type { Media, Status } from '../services/api';
 
 export function ErrorBox({ message }: { message?: string }) {
@@ -294,10 +304,14 @@ export function Modal({
   title,
   children,
   onClose,
+  className = '',
+  backdropClassName = '',
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  className?: string;
+  backdropClassName?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -335,13 +349,13 @@ export function Modal({
   }, [onClose]);
   return (
     <div
-      className="modal-backdrop"
+      className={`modal-backdrop ${backdropClassName}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="modal"
+        className={`modal ${className}`}
         ref={ref}
         role="dialog"
         aria-modal="true"
@@ -357,6 +371,190 @@ export function Modal({
           </button>
         </header>
         {children}
+      </div>
+    </div>
+  );
+}
+
+export function Drawer({
+  title,
+  eyebrow = 'CONTENT STUDIO',
+  children,
+  onClose,
+  initialWidth = 740,
+  minWidth = 460,
+}: {
+  title: string;
+  eyebrow?: string;
+  children: ReactNode;
+  onClose: () => void;
+  initialWidth?: number;
+  minWidth?: number;
+}) {
+  const [width, setWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cmmi_drawer_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= minWidth && parsed <= window.innerWidth) {
+          return Math.min(parsed, window.innerWidth - 32);
+        }
+      }
+      return Math.min(initialWidth, typeof window !== 'undefined' ? window.innerWidth - 32 : initialWidth);
+    }
+    return initialWidth;
+  });
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const widthRef = useRef(width);
+  widthRef.current = width;
+  const preMaximizeWidthRef = useRef(width);
+
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const node = ref.current;
+    if (!node) return;
+    const focusable = () =>
+      Array.from(node.querySelectorAll<HTMLElement>('input,textarea,select,button,[href]')).filter(
+        (el) => !el.hasAttribute('disabled'),
+      );
+    focusable()[0]?.focus();
+    const keydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Tab') {
+        const elements = focusable();
+        const first = elements[0],
+          last = elements.at(-1);
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+        if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', keydown);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', keydown);
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
+  }, [onClose]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isMaximized) setIsMaximized(false);
+    setIsDragging(true);
+    const startX = e.clientX;
+    const startWidth = widthRef.current;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = startX - moveEvent.clientX;
+      const effectiveMinWidth =
+        typeof window !== 'undefined' ? Math.min(minWidth, window.innerWidth - 32) : minWidth;
+      const maxW = typeof window !== 'undefined' ? window.innerWidth - 32 : 1400;
+      const newWidth = Math.min(maxW, Math.max(effectiveMinWidth, startWidth + delta));
+      widthRef.current = newWidth;
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      try {
+        localStorage.setItem('cmmi_drawer_width', String(widthRef.current));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const toggleMaximize = () => {
+    if (isMaximized) {
+      setWidth(preMaximizeWidthRef.current);
+      setIsMaximized(false);
+    } else {
+      preMaximizeWidthRef.current = width;
+      const fullW =
+        typeof window !== 'undefined' ? Math.max(minWidth, window.innerWidth - 40) : 1200;
+      setWidth(fullW);
+      setIsMaximized(true);
+    }
+  };
+
+  const handleDoubleClickHandle = () => {
+    if (isMaximized) {
+      setWidth(initialWidth);
+      setIsMaximized(false);
+    } else if (width >= (typeof window !== 'undefined' ? window.innerWidth - 80 : 1100)) {
+      setWidth(initialWidth);
+    } else {
+      toggleMaximize();
+    }
+  };
+
+  return (
+    <div
+      className={`drawer-backdrop modal-backdrop--drawer ${isDragging ? 'drawer-backdrop--dragging' : ''}`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !isDragging) onClose();
+      }}
+    >
+      <div
+        className={`drawer-panel modal modal--drawer ${isDragging ? 'drawer-panel--dragging' : ''}`}
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        style={{
+          width: `${width}px`,
+        }}
+      >
+        <div
+          className="drawer-resize-handle"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Kéo để thay đổi kích thước panel"
+          title="Kéo sang trái để mở rộng kích thước, nhấp đúp để phóng to/thu nhỏ"
+          onMouseDown={handleMouseDown}
+          onDoubleClick={handleDoubleClickHandle}
+        >
+          <div className="drawer-resize-handle__bar" />
+        </div>
+        <header className="drawer-header">
+          <div>
+            <span className="eyebrow">{eyebrow}</span>
+            <h2 id="modal-title">{title}</h2>
+          </div>
+          <div className="drawer-header__actions">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={isMaximized ? 'Thu nhỏ kích thước panel' : 'Mở rộng toàn màn hình'}
+              title={isMaximized ? 'Thu nhỏ kích thước panel' : 'Mở rộng toàn màn hình'}
+              onClick={toggleMaximize}
+            >
+              {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </button>
+            <button className="icon-button" aria-label="Close dialog" onClick={onClose}>
+              <X size={21} />
+            </button>
+          </div>
+        </header>
+        <div className="drawer-body">{children}</div>
       </div>
     </div>
   );
