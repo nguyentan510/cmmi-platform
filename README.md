@@ -58,6 +58,8 @@ Trên Linux/macOS: dùng `.venv/bin/python` thay cho `.venv\Scripts\python.exe`;
 
 ## Cấu hình Neon, R2 và Tunnel
 
+Domain giao diện được chọn cho dự án là `https://cmmi.trenux.site`; media dùng `https://media.trenux.site`. Cấu hình domain trong dự án không tự tạo DNS hoặc Cloudflare Tunnel; cần hoàn thành bước 6 để công khai giao diện.
+
 1. Tạo Neon project/branch dành riêng cho môi trường này. Lấy URL pooled cho `DATABASE_URL`, direct cho `DATABASE_DIRECT_URL`; dùng `postgresql+asyncpg://...?...sslmode=require`. Mã chuẩn hóa `sslmode` cho asyncpg. Migration ưu tiên URL direct.
 2. Sao chép `.env.example` thành `.env` ở thư mục gốc; thay toàn bộ placeholder. Tạo `SECRET_KEY` ngẫu nhiên ít nhất 32 ký tự. `.env` đã bị Git bỏ qua. Ứng dụng production yêu cầu PostgreSQL, secret và cấu hình R2 đầy đủ.
 3. Tạo bucket R2 và token S3 Object Read & Write chỉ cho bucket đó. Điền endpoint/account, access key, secret key, tên bucket và custom public domain HTTPS.
@@ -66,7 +68,7 @@ Trên Linux/macOS: dùng `.venv/bin/python` thay cho `.venv\Scripts\python.exe`;
 ```json
 [
   {
-    "AllowedOrigins": ["https://cms.example.com"],
+    "AllowedOrigins": ["https://cmmi.trenux.site"],
     "AllowedMethods": ["GET", "HEAD", "PUT"],
     "AllowedHeaders": ["Content-Type"],
     "ExposeHeaders": ["ETag"],
@@ -76,7 +78,7 @@ Trên Linux/macOS: dùng `.venv/bin/python` thay cho `.venv\Scripts\python.exe`;
 ```
 
 5. **Bắt buộc thêm lifecycle rule chỉ cho prefix `staging/`, expire sau 1 ngày.** Upload bỏ dở hoặc replay URL PUT chỉ tạo object tạm; rule này thu hồi chúng. Không đặt rule toàn bucket vì sẽ vượt qua chính sách bảo vệ media dùng chung. Signed URL không cho phép ghi object chính. Xem [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/), [S3 compatibility](https://developers.cloudflare.com/r2/api/s3/api/) và [object lifecycles](https://developers.cloudflare.com/r2/buckets/object-lifecycles/).
-6. Tạo Cloudflare Tunnel; cấu hình public hostname `cms.example.com` → `http://frontend:80`, điền `CLOUDFLARE_TUNNEL_TOKEN`. Nginx phục vụ SPA và proxy API/docs cùng domain. `CORS_ORIGINS` dùng JSON array cho các origin bổ sung nếu cần.
+6. Tạo Cloudflare Tunnel; cấu hình public hostname `cmmi.trenux.site` → `http://frontend:80`, điền `CLOUDFLARE_TUNNEL_TOKEN`. Nginx phục vụ SPA và proxy API/docs cùng domain. `CORS_ORIGINS` dùng JSON array cho các origin bổ sung nếu cần.
 
 Các bước trên thay đổi dịch vụ cloud và do người vận hành thực hiện. Không có tài nguyên cloud nào được tự tạo bởi mã nguồn hoặc kiểm thử cục bộ.
 

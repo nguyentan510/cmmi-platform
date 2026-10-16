@@ -12,8 +12,9 @@ export type Status = components['schemas']['ContentStatus'];
 export type Api = ReturnType<typeof makeApi>;
 
 export function makeApi(token?: string) {
+  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
   const client = createClient<paths>({
-    baseUrl: window.location.origin,
+    baseUrl,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
   client.use({

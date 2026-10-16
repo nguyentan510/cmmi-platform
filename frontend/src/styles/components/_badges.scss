@@ -1,66 +1,85 @@
+@use '../abstracts/variables' as v;
+
 .badge {
   display: inline-flex;
-  gap: 5px;
+  gap: 6px;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 5px;
-  font-size: 10px;
-  line-height: 1.3;
+  padding: 3px 10px;
+  border-radius: v.$radius-full;
+  font-size: 12px;
+  line-height: 1.4;
   white-space: nowrap;
   font-weight: 500;
+  border: 1px solid transparent;
+
   > span {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: currentColor;
+    flex-shrink: 0;
   }
 }
+
 .badge--draft {
-  background: #f2f0f7;
-  color: #7c7097;
+  background: v.$status-draft-bg;
+  color: v.$status-draft;
+  border-color: v.$status-draft-border;
 }
+
 .badge--scheduled {
-  background: #fff2e5;
-  color: #b47c3f;
+  background: v.$status-scheduled-bg;
+  color: v.$status-scheduled;
+  border-color: v.$status-scheduled-border;
 }
+
 .badge--published {
-  background: #edf5e8;
-  color: #5f8446;
+  background: v.$status-published-bg;
+  color: v.$status-published;
+  border-color: v.$status-published-border;
 }
+
 .badge--archived {
-  background: #f0f0ee;
-  color: #73756f;
+  background: v.$status-archived-bg;
+  color: v.$status-archived;
+  border-color: v.$status-archived-border;
 }
+
 .count {
   display: inline-grid;
   place-items: center;
-  min-width: 23px;
-  height: 21px;
-  border-radius: 5px;
-  background: #f2f4ed;
-  color: #818c77;
-  font-size: 10px;
-  font-weight: 500;
-  margin-left: 6px;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: v.$radius-sm;
+  background: v.$slate-100;
+  color: v.$slate-600;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
   vertical-align: middle;
 }
+
 .notice {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 16px;
-  border-radius: 8px;
-  margin: 14px 0;
-  line-height: 1.6;
-  font-size: 12px;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: v.$radius-md;
+  margin: 16px 0;
+  line-height: 1.5;
+  font-size: 13.5px;
+  font-weight: 500;
 }
+
 .notice--error {
-  color: #9c433d;
-  background: #fff0ed;
-  border: 1px solid #f2d7d0;
+  color: v.$danger;
+  background: v.$danger-bg;
+  border: 1px solid v.$danger-border;
 }
+
 .notice--success {
-  color: #476f3d;
-  background: #edf5e8;
-  border: 1px solid #d8e8cd;
+  color: v.$brand-primary;
+  background: v.$brand-light;
+  border: 1px solid v.$status-published-border;
 }

@@ -3,183 +3,260 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
+
 .story {
-  background: #eef0e2;
-  padding: 42px 55px 25px;
+  background: #0f172a;
+  padding: 48px 60px 32px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+
   > div {
-    max-width: 530px;
+    max-width: 540px;
     margin: auto 0;
-    padding: 60px 0 35px;
+    padding: 60px 0 40px;
+    position: relative;
+    z-index: 2;
   }
-  h1 {
-    font-size: clamp(48px, 4.8vw, 77px);
-    font-weight: 400;
-    font-family: Georgia, 'Times New Roman', serif;
-    line-height: 1.04;
-    color: #344d39;
-    letter-spacing: -0.05em;
-    margin-top: 20px;
-    em {
-      color: #82966c;
-      font-weight: 400;
+
+  :global(.brand) {
+    color: #ffffff;
+
+    :global(.brand__mark) {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    :global(.brand__tag) {
+      background: rgba(5, 150, 105, 0.2);
+      color: #34d399;
+      border-color: rgba(5, 150, 105, 0.4);
     }
   }
-  p {
-    color: #99a18c;
-    line-height: 1.9;
-    font-size: 12px;
-    margin-top: 22px;
-  }
-  > footer {
-    font-size: 7px;
+
+  :global(.eyebrow) {
+    color: #34d399;
+    font-size: 11px;
     letter-spacing: 0.1em;
-    color: #a3ab96;
+  }
+
+  h1 {
+    font-size: clamp(44px, 4.5vw, 68px);
+    font-weight: 700;
+    font-family: inherit;
+    line-height: 1.08;
+    color: #ffffff;
+    letter-spacing: -0.04em;
+    margin-top: 20px;
+
+    em {
+      color: #34d399;
+      font-style: normal;
+    }
+  }
+
+  p {
+    color: #94a3b8;
+    line-height: 1.7;
+    font-size: 15px;
+    margin-top: 20px;
+  }
+
+  > footer {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: #64748b;
     display: flex;
     justify-content: space-between;
+    position: relative;
+    z-index: 2;
   }
 }
+
 .art {
-  margin-top: 38px;
-  width: 290px;
-  height: 140px;
+  margin-top: 40px;
+  width: 300px;
+  height: 150px;
   position: relative;
+
   > div {
     position: relative;
     z-index: 2;
-    width: 260px;
-    height: 125px;
-    background: #dfe6cc;
-    border: 1px solid #d3dcbf;
-    border-radius: 14px;
+    width: 270px;
+    height: 130px;
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
     display: flex;
     align-items: center;
-    gap: 22px;
-    padding: 25px;
-    transform: rotate(-7deg);
-    color: #90a470;
+    gap: 20px;
+    padding: 24px;
+    transform: rotate(-5deg);
+    color: #34d399;
+
     span {
-      color: #71855d;
-      font-size: 12px;
-      line-height: 1.6;
+      color: #f8fafc;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-weight: 500;
     }
+
     > svg:last-child {
       position: absolute;
-      right: 12px;
-      top: 11px;
-      width: 14px;
+      right: 14px;
+      top: 14px;
+      width: 16px;
+      color: #94a3b8;
     }
   }
 }
+
 .orbit {
   position: absolute;
   z-index: 1;
-  width: 170px;
-  height: 170px;
-  border: 1px solid #d7dec5;
+  width: 200px;
+  height: 200px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 50%;
   top: -20px;
-  right: -22px;
+  right: -20px;
+
   &::before {
     content: '';
-    width: 130px;
-    height: 130px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
-    border: 1px solid #d7dec5;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     display: block;
-    margin: 19px;
+    margin: 24px;
   }
 }
+
 .form {
-  padding: 42px 55px 25px;
+  padding: 48px 60px 32px;
   display: flex;
   flex-direction: column;
-  background: #fcfdf9;
+  background: #ffffff;
+
   form {
-    width: min(100%, 335px);
+    width: min(100%, 360px);
     margin: auto;
-    padding: 50px 0;
+    padding: 40px 0;
   }
+
+  :global(.eyebrow) {
+    color: #059669;
+  }
+
   h2 {
-    font-size: 35px;
-    margin: 15px 0 9px;
-    letter-spacing: -0.05em;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 12px 0 8px;
+    letter-spacing: -0.03em;
   }
+
   p {
-    color: #9ca58e;
-    font-size: 11px;
-    margin-bottom: 32px;
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 28px;
   }
+
   label {
-    margin-bottom: 19px;
-    font-size: 11px;
-    color: #6d7b60;
+    margin-bottom: 18px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #0f172a;
+
     input {
-      padding: 12px 14px;
-      font-size: 12px;
+      padding: 11px 14px;
+      font-size: 14px;
+      margin-top: 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #0f172a;
+
+      &:focus {
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+      }
     }
   }
+
   button[type='submit'],
   form > button {
     width: 100%;
-    min-height: 43px;
-    margin-top: 5px;
+    min-height: 44px;
+    font-size: 14px;
+    margin-top: 8px;
   }
+
   small {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 8px;
-    color: #a5ae97;
-    margin-top: 25px;
+    gap: 8px;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 24px;
     justify-content: center;
   }
+
   > footer {
     display: flex;
     justify-content: space-between;
-    font-size: 8px;
-    color: #aab29d;
+    font-size: 12px;
+    color: #94a3b8;
   }
 }
+
 @media (max-width: 950px) {
   .story,
   .form {
-    padding: 35px;
+    padding: 36px;
   }
 }
+
 @media (max-width: 700px) {
   .login {
     grid-template-columns: 1fr;
   }
+
   .story {
-    padding: 25px;
+    padding: 32px 24px;
+
     > div {
-      padding-block: 30px;
+      padding-block: 20px;
     }
+
     h1 {
-      font-size: 44px;
+      font-size: 38px;
     }
+
     > footer,
     .art,
     .story p {
       display: none;
     }
+
     h1 br:nth-child(2) {
       display: none;
     }
   }
+
   .form {
-    padding: 20px 25px;
+    padding: 24px;
+
     form {
-      padding: 30px 0 45px;
+      padding: 24px 0 36px;
       width: 100%;
       max-width: 400px;
     }
+
     > footer {
-      margin-top: 20px;
+      margin-top: 16px;
     }
   }
 }

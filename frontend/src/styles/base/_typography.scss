@@ -1,50 +1,68 @@
 @use '../abstracts/variables' as v;
+
 body {
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  font-size: 13px;
-  color: v.$ink;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: v.$text-main;
   background: v.$canvas;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
 }
+
 h1,
 h2,
 h3,
+h4,
 p {
   margin: 0;
 }
+
 h1,
 h2,
-h3 {
-  letter-spacing: -0.035em;
+h3,
+h4 {
+  color: v.$text-main;
+  letter-spacing: -0.025em;
   font-weight: 600;
 }
+
 h1 {
-  font-size: 30px;
-  line-height: 1.2;
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 700;
 }
+
 h2 {
   font-size: 18px;
+  line-height: 1.35;
 }
+
 h3 {
   font-size: 16px;
+  line-height: 1.4;
 }
+
 code {
-  font-family: 'Cascadia Code', Consolas, monospace;
-  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  font-size: 12.5px;
 }
+
 .eyebrow {
-  color: #7b887c;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-}
-.caption {
-  color: #7b847d;
+  color: v.$text-muted;
   font-size: 11px;
-  line-height: 1.8;
-  margin-top: 18px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
+
+.caption {
+  color: v.$text-muted;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 14px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
