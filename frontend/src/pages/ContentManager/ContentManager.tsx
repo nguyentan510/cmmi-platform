@@ -12,7 +12,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { Badge, Empty, ErrorBox, Pager } from '../../components/Shared';
+import { Badge, Empty, ErrorBox, Pager, VideoThumbnail } from '../../components/Shared';
 import {
   type Api,
   type Content,
@@ -239,21 +239,16 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
                         <span
                           className={`content-thumb content-thumb--${item.status.toLowerCase()}`}
                         >
-                          {item.media_assets.find(
-                            (m) => m.upload_confirmed && !m.is_cleaned && m.media_type === 'IMAGE',
-                          ) ? (
-                            <img
-                              src={
-                                item.media_assets.find(
-                                  (m) =>
-                                    m.upload_confirmed && !m.is_cleaned && m.media_type === 'IMAGE',
-                                )!.public_url
-                              }
-                              alt=""
-                            />
-                          ) : (
-                            <FileText size={19} />
-                          )}
+                          {(() => {
+                            const primary = item.media_assets.find(
+                              (m) => m.upload_confirmed && !m.is_cleaned && m.public_url,
+                            );
+                            if (!primary) return <FileText size={19} />;
+                            if (primary.media_type === 'IMAGE') {
+                              return <img src={primary.public_url} alt="" loading="lazy" />;
+                            }
+                            return <VideoThumbnail src={primary.public_url} alt={item.title} />;
+                          })()}
                         </span>
                         <span>
                           <strong>{item.title}</strong>

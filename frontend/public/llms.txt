@@ -1,0 +1,19 @@
+# CMMI API
+
+Content and Media Management Infrastructure for creators and automation.
+
+- [OpenAPI contract](/openapi.json)
+- [Interactive Scalar reference](/docs)
+- [Full agent guide](/llms-full.txt)
+
+## Authentication
+Use `X-API-Key: cmmi_live_...` or `Authorization: Bearer <JWT>`.
+Keys are shown once, scoped and owned by their issuing user. CREATOR access is owner-only.
+
+## Content workflow
+Create with POST /api/v1/contents. Channel IDs default to empty strings.
+Read scheduled work with GET /api/v1/contents?status=SCHEDULED.
+After externally posting, PATCH /api/v1/contents/{id} with status PUBLISHED and
+fb_post_id, tiktok_post_id, youtube_post_id. The server records published_at.
+Send timezone-aware UTC scheduled_at (for example 2026-10-20T02:00:00Z).
+The API stores scheduling metadata; your automation is responsible for posting.

@@ -46,6 +46,12 @@ services:
     buildCommand: "npm ci && npm run build"
     staticPublishPath: "./dist"
     routes:
+      - type: redirect
+        source: "/docs"
+        destination: "https://cmmi-backend.onrender.com/docs"
+      - type: redirect
+        source: "/redoc"
+        destination: "https://cmmi-backend.onrender.com/redoc"
       - type: rewrite
         source: "/*"
         destination: "/index.html"

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, CircleAlert, Inbox, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleAlert, Inbox, Play, Video, X } from 'lucide-react';
 import type { Media, Status } from '../services/api';
 
 export function ErrorBox({ message }: { message?: string }) {
@@ -123,6 +123,173 @@ export function MediaPreview({
     </>
   );
 }
+
+export const videoThumbnailCache = new Map<string, string>();
+
+export function VideoThumbnail({
+  src,
+  alt = '',
+}: {
+  src: string;
+  alt?: string;
+}) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(() => videoThumbnailCache.get(src) ?? null);
+  const [loadError, setLoadError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (!src) return;
+    if (videoThumbnailCache.has(src)) {
+      setThumbUrl(videoThumbnailCache.get(src)!);
+      return;
+    }
+
+    if (typeof document === 'undefined') return;
+
+    let isMounted = true;
+    let video: HTMLVideoElement | null = null;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    try {
+      video = document.createElement('video');
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+
+      const videoSrc = src.includes('#') ? src : `${src}#t=0.001`;
+      video.src = videoSrc;
+    } catch {
+      return;
+    }
+
+    const cleanUp = () => {
+      if (!video) return;
+      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+      clearTimeout(timeoutId);
+      try {
+        video.removeAttribute('src');
+        if (typeof video.load === 'function' && !navigator.userAgent.includes('jsdom')) {
+          video.load();
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const tryCapture = () => {
+      if (!isMounted || !video) return;
+      try {
+        if (!video.videoWidth || !video.videoHeight) return;
+        const canvas = document.createElement('canvas');
+        const maxDim = 128;
+        const aspect = video.videoWidth / video.videoHeight;
+        let w = maxDim;
+        let h = maxDim;
+        if (aspect > 1) {
+          h = Math.round(maxDim / aspect);
+        } else {
+          w = Math.round(maxDim * aspect);
+        }
+        canvas.width = Math.max(1, w);
+        canvas.height = Math.max(1, h);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          cleanUp();
+          return;
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        if (dataUrl && dataUrl.startsWith('data:image/')) {
+          videoThumbnailCache.set(src, dataUrl);
+          if (isMounted) {
+            setThumbUrl(dataUrl);
+          }
+        }
+        cleanUp();
+      } catch {
+        cleanUp();
+      }
+    };
+
+    const onSeeked = () => {
+      tryCapture();
+    };
+
+    const onLoadedData = () => {
+      if (video && video.currentTime === 0) {
+        try {
+          video.currentTime = 0.001;
+        } catch {
+          tryCapture();
+        }
+      } else {
+        tryCapture();
+      }
+    };
+
+    const onError = () => {
+      cleanUp();
+    };
+
+    video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('seeked', onSeeked);
+    video.addEventListener('error', onError);
+
+    timeoutId = setTimeout(() => {
+      cleanUp();
+    }, 4000);
+
+    return () => {
+      isMounted = false;
+      cleanUp();
+    };
+  }, [src]);
+
+  if (thumbUrl) {
+    return (
+      <div className="content-thumb__video-wrap">
+        <img src={thumbUrl} alt={alt} loading="lazy" />
+        <span className="content-thumb__play-badge" aria-hidden="true" title="Video">
+          <Play size={8} fill="currentColor" />
+        </span>
+      </div>
+    );
+  }
+
+  if (!loadError) {
+    return (
+      <div className="content-thumb__video-wrap">
+        <video
+          ref={videoRef}
+          src={src.includes('#') ? src : `${src}#t=0.001`}
+          preload="metadata"
+          muted
+          playsInline
+          onLoadedMetadata={(e) => {
+            const v = e.currentTarget;
+            if (v.currentTime === 0) {
+              try {
+                v.currentTime = 0.001;
+              } catch {
+                /* ignore */
+              }
+            }
+          }}
+          onError={() => setLoadError(true)}
+        />
+        <span className="content-thumb__play-badge" aria-hidden="true" title="Video">
+          <Play size={8} fill="currentColor" />
+        </span>
+      </div>
+    );
+  }
+
+  return <Video size={19} />;
+}
+
 export function Modal({
   title,
   children,

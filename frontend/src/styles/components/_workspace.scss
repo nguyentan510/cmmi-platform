@@ -265,11 +265,57 @@ td:has(> .table-marker) {
   background: v.$slate-100;
   border: 1px solid v.$border;
   overflow: hidden;
+  position: relative;
 
-  img {
+  img,
+  video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  &__video-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img,
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+  }
+
+  &__play-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 15px;
+    height: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    pointer-events: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+
+    svg {
+      width: 8px;
+      height: 8px;
+      margin-left: 1px;
+    }
   }
 }
 

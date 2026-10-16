@@ -1,6 +1,9 @@
 import { ArrowUpRight, BookOpen, Bot, CloudUpload, KeyRound, Leaf } from 'lucide-react';
 
 export default function DocsViewer() {
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  const docsUrl = apiBase ? `${apiBase}/docs` : '/docs';
+
   return (
     <div className="docs">
       <div className="docs__hero">
@@ -74,8 +77,16 @@ export default function DocsViewer() {
         </article>
       </div>
       <div className="docs-links">
-        <a className="button button--primary" href="/docs" target="_blank" rel="noreferrer">
+        <a className="button button--primary" href={docsUrl} target="_blank" rel="noreferrer">
           Interactive API reference <ArrowUpRight size={16} />
+        </a>
+        <a
+          className="button button--secondary"
+          href="/llms.txt"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Quick AI spec (/llms.txt) <ArrowUpRight size={16} />
         </a>
         <a
           className="button button--secondary"

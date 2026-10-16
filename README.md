@@ -14,10 +14,10 @@ Monorepo triển khai theo bản kế hoạch được cung cấp: FastAPI + SQL
 - CRUD nội dung, lọc trạng thái/kênh/tiêu đề, phân trang, chế độ bảng/lịch, nhập Markdown, đính kèm media theo thứ tự. Ba trường ID/URL mạng xã hội mặc định `""`.
 - Upload trực tiếp R2 bằng signed PUT 15 phút; xác nhận kích thước/MIME bằng HEAD và chuyển object tạm sang object chính với điều kiện ETag. Video/ảnh có preview; media đã dọn giữ metadata.
 - Cron mặc định `0 2 * * *` theo **UTC** (09:00 Việt Nam), retention 7 ngày, có bật/tắt và chạy ngay. Giữ media dùng chung nếu còn bất kỳ tham chiếu nháp, lên lịch, lưu trữ hoặc bài mới đăng. Lỗi xóa từng phần được giữ lại để thử lại.
-- Scalar `/docs`, ReDoc `/redoc`, `/openapi.json`, `/llms.txt`, `/llms-full.txt`, hướng dẫn trong ứng dụng `/help`.
+- Tài liệu & API: [Hướng dẫn API](docs/API_GUIDE.md), [Hướng dẫn cho AI Agents](docs/AGENTS_GUIDE.md), Scalar `/docs`, ReDoc `/redoc`, `/openapi.json`, `/llms.txt`, `/llms-full.txt`, và trang hướng dẫn trong ứng dụng `/help`.
 - Client `openapi-fetch` và TypeScript tự sinh từ OpenAPI; kiểm tra drift trong CI.
 
-CMMI lưu lịch và ID bài đăng. Agent/n8n/Make của bạn thực hiện đăng lên Facebook, TikTok và YouTube rồi cập nhật dữ liệu qua API. Ứng dụng không tự đăng lên các nền tảng đó.
+CMMI lưu lịch và ID bài đăng. Agent/n8n/Make của bạn thực hiện đăng lên Facebook, TikTok và YouTube rồi cập nhật dữ liệu qua API. Ứng dụng không tự đăng lên các nền tảng đó. Xem thêm [quy tắc Agent trong .agents/AGENTS.md](.agents/AGENTS.md).
 
 ## Chạy cục bộ trên Windows
 
