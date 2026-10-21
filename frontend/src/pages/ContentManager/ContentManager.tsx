@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowDownUp,
   ArrowUpRight,
@@ -28,11 +28,21 @@ import ContentEditor from './ContentEditor';
 export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () => void }) {
   const [status, setStatus] = useState<Status | ''>('');
   const [channel, setChannel] = useState<'facebook' | 'tiktok' | 'youtube' | ''>('');
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [offset, setOffset] = useState(0);
   const [view, setView] = useState<'table' | 'calendar'>('table');
   const [editor, setEditor] = useState<Content | 'new' | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (searchInput === search) return;
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, search]);
   const items = useLoad(
     () =>
       result(
@@ -166,11 +176,8 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
             <Search size={16} />
             <input
               aria-label="Search content"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setOffset(0);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Find a story…"
             />
           </label>

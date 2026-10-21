@@ -48,7 +48,7 @@ async def list_contents(
     limit: Annotated[int, Query(ge=1, le=100)] = 100,
 ):
     """Filter content by status, title or a populated channel ID. Creators see only their own items. Paginate using offset/limit."""
-    query = select(Content)
+    query = select(Content).options(selectinload(Content.links).selectinload(ContentMediaLink.media))
     if principal.user.role != Role.ADMIN:
         query = query.where(Content.author_id == principal.user.id)
     if status:

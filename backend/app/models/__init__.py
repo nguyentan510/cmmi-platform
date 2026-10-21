@@ -64,7 +64,7 @@ class MediaAsset(Base):
     file_size_bytes: Mapped[int] = mapped_column(BigInteger)
     is_cleaned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     upload_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
 class Content(Base):
@@ -78,7 +78,7 @@ class Content(Base):
     )
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     fb_post_id: Mapped[str] = mapped_column(String(2048), default="", server_default="")
     tiktok_post_id: Mapped[str] = mapped_column(String(2048), default="", server_default="")
     youtube_post_id: Mapped[str] = mapped_column(String(2048), default="", server_default="")
