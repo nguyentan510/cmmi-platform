@@ -70,3 +70,11 @@ async def test_download_agent_kit_zip(env):
         assert any("README.md" in name for name in names)
         assert any("requirements.txt" in name for name in names)
         assert any("claude_desktop_config.json" in name for name in names)
+        assert any("openapi.json" in name for name in names)
+
+    # Test tolerance for duplicate slashes (e.g. https://domain//api/v1/tools/agent-kit.zip)
+    double_slash_resp = await client.get("http://test//api/v1/tools/agent-kit.zip")
+    assert double_slash_resp.status_code == 200
+    assert double_slash_resp.headers["content-type"] == "application/zip"
+
+

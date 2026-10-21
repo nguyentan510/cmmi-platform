@@ -10,10 +10,23 @@ from app.api.v1.settings import router as settings_router
 from app.api.v1.tools_agent import router as tools_router
 from app.api.v1.docs_ai import router as docs_router
 
+import re
 from app.core.config import Settings, get_settings
 from app.core.r2_client import R2Storage
 from app.db.session import local_lock, make_engine, session_factory
 from app.tasks.media_cleaner import start_scheduler
+
+
+class NormalizePathMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http":
+            path = scope.get("path", "")
+            if "//" in path:
+                scope["path"] = re.sub(r"/+", "/", path)
+        await self.app(scope, receive, send)
 
 
 @asynccontextmanager
@@ -44,12 +57,14 @@ def create_app(settings: Settings | None = None):
     app.state.sessions = session_factory(app.state.engine)
     app.state.mutation_lock = local_lock()
     app.state.storage = R2Storage(settings)
+    app.add_middleware(NormalizePathMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-API-Key"],
     )
+
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(contents_router, prefix="/api/v1")
     app.include_router(media_router, prefix="/api/v1")

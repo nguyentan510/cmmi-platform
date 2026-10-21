@@ -28,12 +28,14 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
   const [tab, setTab] = useState<Tab>('hub');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const rawApiBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const apiBase = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
   const docsUrl = apiBase ? `${apiBase}/docs` : '/docs';
   const downloadUrl = `${apiBase}/api/v1/tools/agent-kit.zip`;
   const openApiUrl = `${apiBase}/openapi.json`;
 
   const [customServerUrl, setCustomServerUrl] = useState(apiBase || 'http://localhost:8000');
+
   const [customApiKey, setCustomApiKey] = useState('');
 
   const activeKeyDisplay = customApiKey.trim() || 'cmmi_live_your_api_key_here';
