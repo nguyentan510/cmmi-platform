@@ -317,9 +317,9 @@ export interface paths {
         };
         /**
          * Download the complete CMMI Agent Toolkit (.zip)
-         * @description Generates and serves a ZIP archive containing the CMMI MCP server, dependencies,
+         * @description Generates and serves a dynamically tailored ZIP archive containing the CMMI MCP server,
          *
-         *         quickstart README, and client configuration templates for Claude, ChatGPT, and Cursor.
+         *         dependencies, quickstart README, and client configuration templates customized to the current domain.
          */
         get: operations["download_agent_kit_api_v1_tools_agent_kit_zip_get"];
         put?: never;
@@ -1434,7 +1434,12 @@ export interface operations {
     };
     download_agent_kit_api_v1_tools_agent_kit_zip_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional custom base URL to pre-configure inside the zip */
+                base_url?: string | null;
+                /** @description Optional API key to pre-configure inside the zip */
+                api_key?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1448,6 +1453,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

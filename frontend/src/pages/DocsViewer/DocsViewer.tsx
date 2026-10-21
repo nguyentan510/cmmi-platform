@@ -31,17 +31,23 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
   const rawApiBase = import.meta.env.VITE_API_URL || window.location.origin;
   const apiBase = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
   const docsUrl = apiBase ? `${apiBase}/docs` : '/docs';
-  const downloadUrl = `${apiBase}/api/v1/tools/agent-kit.zip`;
   const openApiUrl = `${apiBase}/openapi.json`;
   const llmsUrl = `${apiBase}/llms.txt`;
   const llmsFullUrl = `${apiBase}/llms-full.txt`;
-
   const [customServerUrl, setCustomServerUrl] = useState(apiBase || 'http://localhost:8000');
-
-
   const [customApiKey, setCustomApiKey] = useState('');
 
   const activeKeyDisplay = customApiKey.trim() || 'cmmi_live_your_api_key_here';
+
+  const downloadParams = new URLSearchParams();
+  if (customServerUrl.trim()) {
+    downloadParams.set('base_url', customServerUrl.trim());
+  }
+  if (customApiKey.trim()) {
+    downloadParams.set('api_key', customApiKey.trim());
+  }
+  const downloadQuery = downloadParams.toString();
+  const downloadUrl = `${apiBase}/api/v1/tools/agent-kit.zip${downloadQuery ? `?${downloadQuery}` : ''}`;
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -132,12 +138,12 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
           <div className="agent-download-banner panel">
             <div className="agent-download-banner__left">
               <div className="agent-download-badge">
-                <Sparkles size={14} /> Gói Sẵn Sàng Sử Dụng
+                <Sparkles size={14} /> Gói Tự Động Gắn Sẵn Domain ({customServerUrl || apiBase || 'localhost'})
               </div>
               <h3>CMMI Agent Toolkit (.zip)</h3>
               <p>
-                Trọn gói mã nguồn Python MCP Server, bộ hướng dẫn chi tiết, các file config mẫu cho
-                Claude Desktop, ChatGPT Custom GPT và Cursor IDE.
+                Trọn gói mã nguồn Python MCP Server, bộ hướng dẫn chi tiết, tự động điền sẵn Domain và API Key
+                vào các file <code>.env</code>, <code>claude_desktop_config.json</code>, và <code>shared/openapi.json</code>.
               </p>
               <div className="agent-download-tags">
                 <span className="agent-tag">SKILL.md (Claude Skill)</span>
