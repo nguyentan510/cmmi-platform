@@ -48,7 +48,7 @@ X-API-Key: cmmi_live_your_key_here
       "media": [
         {
           "id": "018f2d5e-...",
-          "public_url": "https://media.trenux.site/media/018f2d5e-.../video.mp4",
+          "public_url": "https://media.example.com/media/018f2d5e-.../video.mp4",
           "mime_type": "video/mp4"
         }
       ]

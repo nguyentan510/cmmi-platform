@@ -17,9 +17,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] | str = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://cmmi.trenux.site",
-        "https://cmmi-frontend.onrender.com",
     ]
+    cors_origin_regex: str | None = None
     r2_endpoint_url: str = ""
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""

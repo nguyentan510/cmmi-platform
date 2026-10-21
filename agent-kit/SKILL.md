@@ -98,7 +98,7 @@ Mọi cấu hình cho Agent được tập trung tại file `.env` của dự á
 * **`CMMI_BASE_URL`** (Động theo Backend Server):
   - **Khi sử dụng biến động `{BASE-URL}` hoặc `auto` (hoặc để trống)**:
     - Agent và Toolkit tự động bám theo domain của Backend Server đang hoạt động (tự động giải quyết qua server host, hoặc tự động dò tìm giữa backend local và cloud).
-  - **Khi đặt URL cụ thể**: Sử dụng chính xác URL đó (ví dụ: `http://localhost:8000`, `https://cmmi.trenux.site`, hoặc domain máy chủ CMMI của bạn).
+  - **Khi đặt URL cụ thể**: Sử dụng chính xác URL đó (ví dụ: `http://localhost:8000`, `https://{BASE-URL}`, hoặc domain máy chủ CMMI của bạn).
 * **`CMMI_API_KEY`**:
   - API Key của bạn (bắt đầu bằng `cmmi_live_...`), dùng làm giá trị xác thực cho header `X-API-Key`.
 * **Cơ chế nạp biến của Agent**:

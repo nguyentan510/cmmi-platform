@@ -57,7 +57,20 @@ def resolve_request_base_url(request: Request, custom_url: Optional[str] = None)
 
 def inject_dynamic_variables(content: str, target_url: str, target_api_key: str) -> str:
     """Dynamically injects active server URL and API key into templates containing {BASE-URL}."""
-    for p in ("{BASE-URL}", "{BASE_URL}", "https://cmmi-backend.onrender.com", "http://localhost:8000"):
+    for p in (
+        "{BASE-URL}",
+        "{BASE_URL}",
+        "{base-url}",
+        "{base_url}",
+        "${BASE-URL}",
+        "${base-url}",
+        "<BASE-URL>",
+        "<base-url>",
+        "https://cmmi-backend.onrender.com",
+        "https://cmmi-frontend.onrender.com",
+        "https://cmmi.trenux.site",
+        "http://localhost:8000",
+    ):
         content = content.replace(p, target_url)
 
     clean_host = target_url.replace("https://", "").replace("http://", "")

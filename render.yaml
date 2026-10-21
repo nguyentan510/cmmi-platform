@@ -24,7 +24,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: '["https://cmmi-frontend.onrender.com","https://cmmi.trenux.site"]'
+        sync: false # e.g. '["https://{base-url}"]'
       - key: R2_ENDPOINT_URL
         sync: false
       - key: R2_ACCESS_KEY_ID
@@ -48,26 +48,26 @@ services:
     routes:
       - type: redirect
         source: "/docs"
-        destination: "https://cmmi-backend.onrender.com/docs"
+        destination: "https://{base-url}/docs"
       - type: redirect
         source: "/redoc"
-        destination: "https://cmmi-backend.onrender.com/redoc"
+        destination: "https://{base-url}/redoc"
       - type: redirect
         source: "/openapi.json"
-        destination: "https://cmmi-backend.onrender.com/openapi.json"
+        destination: "https://{base-url}/openapi.json"
       - type: redirect
         source: "/llms.txt"
-        destination: "https://cmmi-backend.onrender.com/llms.txt"
+        destination: "https://{base-url}/llms.txt"
       - type: redirect
         source: "/llms-full.txt"
-        destination: "https://cmmi-backend.onrender.com/llms-full.txt"
+        destination: "https://{base-url}/llms-full.txt"
       - type: redirect
         source: "/api/*"
-        destination: "https://cmmi-backend.onrender.com/api/*"
+        destination: "https://{base-url}/api/*"
       - type: rewrite
         source: "/*"
         destination: "/index.html"
     envVars:
       - key: VITE_API_URL
-        value: "https://cmmi-backend.onrender.com"
+        sync: false # Set to backend server URL: https://{base-url}
 

@@ -76,7 +76,7 @@ async def resolve_base_url() -> str:
     2. CMMI_BASE_URL from environment or .env (reloaded fresh)
     3. Auto-discovery: If set to 'auto' or empty:
        - Probe http://localhost:8000/health (0.8s timeout) -> if alive, use localhost.
-       - Probe https://cmmi-backend.onrender.com/health -> if alive, use Render.
+       - Probe dynamic server URL if configured in CMMI_SERVER_URL.
        - Fallback: http://localhost:8000
     """
     if _RUNTIME_CONFIG["base_url"]:
@@ -108,13 +108,15 @@ async def resolve_base_url() -> str:
         except Exception:
             pass
 
-        # 2. Check remote production/default (Render)
-        try:
-            res = await client.get("https://cmmi-backend.onrender.com/health")
-            if res.status_code == 200:
-                return "https://cmmi-backend.onrender.com"
-        except Exception:
-            pass
+        # 2. Check remote server from environment if configured
+        remote_url = os.environ.get("CMMI_SERVER_URL", "").strip()
+        if remote_url and remote_url.lower() not in placeholder_values:
+            try:
+                res = await client.get(f"{remote_url.rstrip('/')}/health")
+                if res.status_code == 200:
+                    return remote_url.rstrip("/")
+            except Exception:
+                pass
 
     return "http://localhost:8000"
 
@@ -141,11 +143,11 @@ async def cmmi_set_target(
 ) -> str:
     """Dynamically switch the active target CMMI backend URL or API key at runtime.
 
-    Call this whenever you change servers (e.g. from localhost to Render, or to a custom domain),
+    Call this whenever you change servers (e.g. from localhost to production, or to a custom domain),
     without needing to restart the MCP server.
 
     Args:
-        base_url: The new backend URL (e.g. 'http://localhost:8000', 'https://cmmi.trenux.site', 'https://cmmi-backend.onrender.com', or 'auto').
+        base_url: The new backend URL (e.g. 'http://localhost:8000', 'https://{base-url}', or 'auto').
         api_key: Optional new API key (e.g. 'cmmi_live_...').
     """
     changes = []
