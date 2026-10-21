@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
+  AlertTriangle,
   ArrowUpRight,
   BookOpen,
   Bot,
@@ -13,9 +14,11 @@ import {
   KeyRound,
   Layers,
   Leaf,
+  Lock,
   Sparkles,
   Terminal,
   Wand2,
+  X,
 } from 'lucide-react';
 import type { Api } from '../../services/api';
 
@@ -23,21 +26,48 @@ type Tab = 'hub' | 'workflows' | 'api';
 
 interface DocsViewerProps {
   api?: Api;
+  onNavigateToApiKeys?: () => void;
 }
 
-export default function DocsViewer({ api: _api }: DocsViewerProps) {
+export default function DocsViewer({ api: _api, onNavigateToApiKeys }: DocsViewerProps) {
   const [tab, setTab] = useState<Tab>('hub');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const rawApiBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const rawApiBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const apiBase = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
   const docsUrl = apiBase ? `${apiBase}/docs` : '/docs';
   const openApiUrl = `${apiBase}/openapi.json`;
   const llmsUrl = `${apiBase}/llms.txt`;
   const llmsFullUrl = `${apiBase}/llms-full.txt`;
-  const [customServerUrl, setCustomServerUrl] = useState('');
   const [detectedServerUrl, setDetectedServerUrl] = useState(apiBase || '');
-  const [customApiKey, setCustomApiKey] = useState('');
+  const [customApiKey, setCustomApiKey] = useState(() => {
+    try {
+      return sessionStorage.getItem('cmmi_last_api_key') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const handleApiKeyChange = (val: string) => {
+    setCustomApiKey(val);
+    try {
+      if (val.trim()) {
+        sessionStorage.setItem('cmmi_last_api_key', val.trim());
+      } else {
+        sessionStorage.removeItem('cmmi_last_api_key');
+      }
+    } catch {
+      // ignore storage access errors
+    }
+  };
+
+  const handleNavigateToApiKeys = () => {
+    if (onNavigateToApiKeys) {
+      onNavigateToApiKeys();
+    } else {
+      window.dispatchEvent(new CustomEvent('cmmi:navigate-keys'));
+    }
+  };
 
   useEffect(() => {
     fetch(`${apiBase}/api/v1/tools/config`)
@@ -50,15 +80,16 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
       .catch(() => {});
   }, [apiBase]);
 
-  // Dynamic Base URL: tracks live server, user custom domain, or flexible {BASE-URL} template
-  const effectiveBaseUrl = customServerUrl.trim() || detectedServerUrl || '{BASE-URL}';
+  // CMMI Base URL is strictly fixed to the active API server (no manual intervention allowed)
+  const effectiveBaseUrl = detectedServerUrl || apiBase || (typeof window !== 'undefined' ? window.location.origin : '');
+  const hasApiKey = Boolean(customApiKey.trim());
   const activeKeyDisplay = customApiKey.trim() || '{CMMI-API-KEY}';
 
   const downloadParams = new URLSearchParams();
-  if (customServerUrl.trim() && customServerUrl.trim() !== '{BASE-URL}') {
-    downloadParams.set('base_url', customServerUrl.trim());
+  if (effectiveBaseUrl) {
+    downloadParams.set('base_url', effectiveBaseUrl);
   }
-  if (customApiKey.trim() && customApiKey.trim() !== '{CMMI-API-KEY}') {
+  if (hasApiKey) {
     downloadParams.set('api_key', customApiKey.trim());
   }
   const downloadQuery = downloadParams.toString();
@@ -267,52 +298,92 @@ CMMI_API_KEY=${activeKeyDisplay}
               <h4>Trình Sinh Cấu Hình Tự Động (Live Config Generator)</h4>
             </div>
             <p className="agent-config-bar__desc">
-              Nhập API Key và Domain của bạn để mã cấu hình bên dưới tự động cập nhật ngay lập tức:
+              Hệ thống tự động đồng bộ Domain máy chủ API. Vui lòng nhập API Key để cấu hình hoàn chỉnh cho AI Agent:
             </p>
             <div className="agent-config-inputs">
+              {/* Field 1: CMMI Base URL - Cố định theo Server API */}
               <div className="agent-input-field">
-                <label>CMMI Base URL ({customServerUrl ? 'Đang chọn' : 'Tự động bám theo Server'}):</label>
-                <input
-                  type="text"
-                  value={customServerUrl}
-                  onChange={(e) => setCustomServerUrl(e.target.value)}
-                  placeholder={`{BASE-URL} (vd: ${detectedServerUrl || apiBase || 'https://your-domain.com'})`}
-                />
-                <div className="agent-url-presets">
-                  <button
-                    type="button"
-                    className={`agent-url-preset-btn ${!customServerUrl ? 'agent-url-preset-btn--active' : ''}`}
-                    onClick={() => setCustomServerUrl('')}
-                    title="Tự động theo dõi domain của backend server hiện tại"
-                  >
-                    🌐 Theo Server ({detectedServerUrl || apiBase || 'Live'})
-                  </button>
-                  <button
-                    type="button"
-                    className={`agent-url-preset-btn ${customServerUrl === '{BASE-URL}' ? 'agent-url-preset-btn--active' : ''}`}
-                    onClick={() => setCustomServerUrl('{BASE-URL}')}
-                    title="Sử dụng biến động {BASE-URL} làm khuôn mẫu"
-                  >
-                    ⚡ Mẫu {'{BASE-URL}'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`agent-url-preset-btn ${customServerUrl === 'auto' ? 'agent-url-preset-btn--active' : ''}`}
-                    onClick={() => setCustomServerUrl('auto')}
-                    title="Chế độ auto dò tìm localhost hoặc cloud"
-                  >
-                    🔄 auto
-                  </button>
+                <div className="agent-input-field__label-row">
+                  <label htmlFor="cmmi-base-url-input">CMMI Base URL (Tự động bám theo Server):</label>
+                  <span className="agent-status-badge agent-status-badge--locked" title="Khóa cố định theo API Server">
+                    <Lock size={12} /> Cố định theo Server
+                  </span>
+                </div>
+                <div className="agent-readonly-input-wrap">
+                  <input
+                    id="cmmi-base-url-input"
+                    type="text"
+                    value={effectiveBaseUrl}
+                    readOnly
+                    disabled
+                    aria-readonly="true"
+                    className="agent-input agent-input--locked"
+                    title="URL máy chủ cố định theo API Server, không cho phép can thiệp chỉnh sửa"
+                  />
+                  <span className="agent-input-lock-icon" aria-hidden="true" title="Đã khóa theo máy chủ API">
+                    <Lock size={14} />
+                  </span>
+                </div>
+                <div className="agent-field-hint">
+                  <span>🌐 URL máy chủ chính thức được tự động đồng bộ từ Backend API (Không thể can thiệp)</span>
                 </div>
               </div>
+
+              {/* Field 2: API Key - Hiển thị cảnh báo & Điều hướng khi chưa điền */}
               <div className="agent-input-field">
-                <label>API Key của bạn:</label>
-                <input
-                  type="text"
-                  value={customApiKey}
-                  onChange={(e) => setCustomApiKey(e.target.value)}
-                  placeholder="cmmi_live_..."
-                />
+                <div className="agent-input-field__label-row">
+                  <label htmlFor="cmmi-api-key-input">API Key của bạn:</label>
+                  {!hasApiKey ? (
+                    <span className="agent-status-badge agent-status-badge--warning">
+                      <AlertTriangle size={12} /> Chưa điền API Key
+                    </span>
+                  ) : (
+                    <span className="agent-status-badge agent-status-badge--success">
+                      <Check size={12} /> Đã sẵn sàng
+                    </span>
+                  )}
+                </div>
+                <div className="agent-input-action-wrap">
+                  <input
+                    id="cmmi-api-key-input"
+                    type="text"
+                    value={customApiKey}
+                    onChange={(e) => handleApiKeyChange(e.target.value)}
+                    placeholder="cmmi_live_... (Dán API Key tại đây)"
+                    className={`agent-input ${!hasApiKey ? 'agent-input--warning' : 'agent-input--valid'}`}
+                  />
+                  {hasApiKey && (
+                    <button
+                      type="button"
+                      className="agent-input-clear-btn"
+                      onClick={() => handleApiKeyChange('')}
+                      title="Xóa API Key đã nhập"
+                      aria-label="Xóa API Key"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {!hasApiKey ? (
+                  <div className="agent-apikey-warning-box">
+                    <div className="agent-apikey-warning-box__content">
+                      <AlertTriangle size={16} className="agent-warning-icon" />
+                      <span>Chưa có API Key? Bạn cần tạo API Key để cấp quyền xác thực cho AI Agent.</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="button button--secondary button--small agent-nav-api-btn"
+                      onClick={handleNavigateToApiKeys}
+                    >
+                      <KeyRound size={13} /> Đi tới khu vực tạo API Key <ArrowUpRight size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="agent-field-hint agent-field-hint--success">
+                    <Check size={13} /> Đã nạp API Key vào mẫu cấu hình và Build Prompt bên dưới.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -346,6 +417,28 @@ CMMI_API_KEY=${activeKeyDisplay}
                 <span className="step-num">4</span> Báo cáo bảng trạng thái chi tiết
               </span>
             </div>
+
+            {!hasApiKey && (
+              <div className="agent-prompt-warning-callout">
+                <div className="agent-prompt-warning-callout__left">
+                  <AlertTriangle size={18} className="callout-icon" />
+                  <div>
+                    <strong>Chưa có API Key trong Build Prompt:</strong>
+                    <p>
+                      Mã prompt bên dưới đang sử dụng placeholder tạm thời <code>{'{CMMI-API-KEY}'}</code>. Hãy tạo và dán API Key để AI Agent có thể vượt qua bước kiểm tra xác thực.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="button button--secondary agent-prompt-warning-callout__btn"
+                  onClick={handleNavigateToApiKeys}
+                >
+                  <KeyRound size={14} /> Đi tới khu vực tạo API Key <ArrowUpRight size={13} />
+                </button>
+              </div>
+            )}
+
             <div className="agent-build-prompt-card__code-container">
               <pre>
                 <code>{buildPromptText}</code>
@@ -355,22 +448,38 @@ CMMI_API_KEY=${activeKeyDisplay}
               <div className="target-hint">
                 <span>Server đích:</span>
                 <strong>{effectiveBaseUrl}</strong>
-              </div>
-              <button
-                className="button button--primary button--large"
-                style={{ background: '#059669', borderColor: '#059669', color: '#fff' }}
-                onClick={() => copyToClipboard(buildPromptText, 'build-prompt')}
-              >
-                {copiedKey === 'build-prompt' ? (
-                  <>
-                    <Check size={16} /> Đã sao chép Build Prompt
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} /> Sao chép Build Prompt (1-Click)
-                  </>
+                {!hasApiKey && (
+                  <span className="target-hint__key-badge target-hint__key-badge--warning">
+                    <AlertTriangle size={12} /> Thiếu API Key
+                  </span>
                 )}
-              </button>
+              </div>
+              <div className="agent-build-prompt-card__footer-actions">
+                {!hasApiKey && (
+                  <button
+                    type="button"
+                    className="button button--secondary agent-footer-nav-btn"
+                    onClick={handleNavigateToApiKeys}
+                  >
+                    <KeyRound size={15} /> Tạo API Key
+                  </button>
+                )}
+                <button
+                  className="button button--primary button--large"
+                  style={{ background: '#059669', borderColor: '#059669', color: '#fff' }}
+                  onClick={() => copyToClipboard(buildPromptText, 'build-prompt')}
+                >
+                  {copiedKey === 'build-prompt' ? (
+                    <>
+                      <Check size={16} /> Đã sao chép Build Prompt
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={16} /> Sao chép Build Prompt (1-Click)
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

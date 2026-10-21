@@ -39,6 +39,11 @@ export default function ApiKeys({ api, isAdmin = false }: { api: Api; isAdmin?: 
       );
       setIsDrawerOpen(false);
       setSecret(key.key);
+      try {
+        sessionStorage.setItem('cmmi_last_api_key', key.key);
+      } catch {
+        // ignore storage access errors
+      }
       setName('');
       setExpiry('');
       keys.reload();

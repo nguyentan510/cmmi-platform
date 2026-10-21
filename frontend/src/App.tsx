@@ -54,8 +54,16 @@ export default function App() {
 
   useEffect(() => {
     const logout = () => setSession(null);
+    const navKeys = () => {
+      setPage('settings');
+      setSettingsTab('keys');
+    };
     window.addEventListener('cmmi:unauthorized', logout);
-    return () => window.removeEventListener('cmmi:unauthorized', logout);
+    window.addEventListener('cmmi:navigate-keys', navKeys);
+    return () => {
+      window.removeEventListener('cmmi:unauthorized', logout);
+      window.removeEventListener('cmmi:navigate-keys', navKeys);
+    };
   }, []);
 
   if (!session)
@@ -294,7 +302,15 @@ export default function App() {
               onTabChange={setSettingsTab}
             />
           )}
-          {page === 'help' && <DocsViewer api={api} />}
+          {page === 'help' && (
+            <DocsViewer
+              api={api}
+              onNavigateToApiKeys={() => {
+                setPage('settings');
+                setSettingsTab('keys');
+              }}
+            />
+          )}
 
           <footer className="workspace-footer">
 
