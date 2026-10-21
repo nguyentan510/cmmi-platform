@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "cmmi": {
+      "command": "python",
+      "args": ["d:/cmmi-platform/agent-kit/server.py"],
+      "env": {
+        "CMMI_BASE_URL": "http://localhost:8000",
+        "CMMI_API_KEY": "cmmi_live_your_key_here"
+      }
+    }
+  }
+}

@@ -49,6 +49,16 @@ class R2Storage:
     async def head(self, key: str) -> dict:
         return await asyncio.to_thread(self.client.head_object, Bucket=self.settings.r2_bucket_name, Key=key)
 
+    async def put(self, key: str, body: bytes, content_type: str):
+        return await asyncio.to_thread(
+            self.client.put_object,
+            Bucket=self.settings.r2_bucket_name,
+            Key=key,
+            Body=body,
+            ContentType=content_type,
+        )
+
+
     async def promote(self, source: str, target: str, etag: str):
         # The browser's signed URL can never write the canonical object.
         return await asyncio.to_thread(

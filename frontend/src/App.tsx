@@ -294,9 +294,10 @@ export default function App() {
               onTabChange={setSettingsTab}
             />
           )}
-          {page === 'help' && <DocsViewer />}
+          {page === 'help' && <DocsViewer api={api} />}
 
           <footer className="workspace-footer">
+
             <span>CMMI Studio · Content & Media Management</span>
             <a href="/llms.txt" target="_blank" rel="noreferrer">
               LLMs Context <ArrowUpRight size={12} />

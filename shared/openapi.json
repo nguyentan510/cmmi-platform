@@ -1,6 +1,20 @@
 {
   "components": {
     "schemas": {
+      "Body_upload_direct_api_v1_media_upload_direct_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_direct_api_v1_media_upload_direct_post",
+        "type": "object"
+      },
       "CleanupResult": {
         "additionalProperties": false,
         "properties": {
@@ -591,6 +605,36 @@
         ],
         "title": "MediaType",
         "type": "string"
+      },
+      "MediaUploadFromUrl": {
+        "additionalProperties": false,
+        "properties": {
+          "file_name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional custom filename with extension",
+            "title": "File Name"
+          },
+          "url": {
+            "description": "Public HTTP/HTTPS URL of image or video to download",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "MediaUploadFromUrl",
+        "type": "object"
       },
       "Role": {
         "enum": [
@@ -1588,6 +1632,106 @@
         ]
       }
     },
+    "/api/v1/media/upload-direct": {
+      "post": {
+        "description": "Direct 1-step multipart form-data upload for AI bots and automation clients.",
+        "operationId": "upload_direct_api_v1_media_upload_direct_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_direct_api_v1_media_upload_direct_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaRead"
+                }
+              }
+            },
+            "description": "Successful result. See the response schema for field details."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Upload media directly via multipart/form-data",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/media/upload-from-url": {
+      "post": {
+        "description": "Download an image or video from an external URL and store it directly in R2.",
+        "operationId": "upload_from_url_api_v1_media_upload_from_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaUploadFromUrl"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaRead"
+                }
+              }
+            },
+            "description": "Successful result. See the response schema for field details."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Download media from URL and ingest directly into R2",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
     "/api/v1/media/upload-request": {
       "post": {
         "description": "Reserve an upload. PUT bytes directly to upload_url using the returned Content-Type header within 900 seconds, then call confirm.",
@@ -1840,6 +1984,26 @@
         "summary": "Run media retention cleanup now (admin)",
         "tags": [
           "Cleanup settings"
+        ]
+      }
+    },
+    "/api/v1/tools/agent-kit.zip": {
+      "get": {
+        "description": "Generates and serves a ZIP archive containing the CMMI MCP server, dependencies,\n\n    quickstart README, and client configuration templates for Claude, ChatGPT, and Cursor.",
+        "operationId": "download_agent_kit_api_v1_tools_agent_kit_zip_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "A ready-to-use zip bundle containing MCP server, instructions and configuration templates."
+          }
+        },
+        "summary": "Download the complete CMMI Agent Toolkit (.zip)",
+        "tags": [
+          "Agent Tools"
         ]
       }
     },
