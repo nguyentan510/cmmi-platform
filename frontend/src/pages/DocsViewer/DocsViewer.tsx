@@ -33,8 +33,11 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
   const docsUrl = apiBase ? `${apiBase}/docs` : '/docs';
   const downloadUrl = `${apiBase}/api/v1/tools/agent-kit.zip`;
   const openApiUrl = `${apiBase}/openapi.json`;
+  const llmsUrl = `${apiBase}/llms.txt`;
+  const llmsFullUrl = `${apiBase}/llms-full.txt`;
 
   const [customServerUrl, setCustomServerUrl] = useState(apiBase || 'http://localhost:8000');
+
 
   const [customApiKey, setCustomApiKey] = useState('');
 
@@ -526,7 +529,7 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
               <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <a
                   className="button button--secondary"
-                  href="/llms.txt"
+                  href={llmsUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -534,7 +537,7 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
                 </a>
                 <a
                   className="button button--secondary"
-                  href="/llms-full.txt"
+                  href={llmsFullUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -552,7 +555,7 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
               <div style={{ marginTop: '16px' }}>
                 <a
                   className="button button--secondary"
-                  href="/openapi.json"
+                  href={openApiUrl}
                   target="_blank"
                   rel="noreferrer"
                 >

@@ -299,10 +299,15 @@ export default function App() {
           <footer className="workspace-footer">
 
             <span>CMMI Studio · Content & Media Management</span>
-            <a href="/llms.txt" target="_blank" rel="noreferrer">
+            <a
+              href={`${(import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')}/llms.txt`}
+              target="_blank"
+              rel="noreferrer"
+            >
               LLMs Context <ArrowUpRight size={12} />
             </a>
           </footer>
+
         </main>
       </div>
     </div>
