@@ -10,7 +10,7 @@ This skill enables Claude to control and interact directly with the CMMI (Conten
 ## 🔑 Authentication & Configuration
 
 When interacting with a CMMI backend instance:
-- **Base URL**: Configured via environment variable `CMMI_BASE_URL` (default: `http://localhost:8000` or your production domain, e.g. `https://cmmi-backend.onrender.com`).
+- **Base URL**: Dynamically resolved. By default, agents auto-discover active host (`http://localhost:8000` if local dev server is running, or cloud domain `https://cmmi-backend.onrender.com`), or use explicit URL provided in user prompt or `CMMI_BASE_URL` environment variable (`auto` by default).
 - **Header**: All requests MUST include the API Key header:
   ```http
   X-API-Key: cmmi_live_your_api_key_here
@@ -26,7 +26,7 @@ When interacting with a CMMI backend instance:
 
 #### Option A: Direct Ingestion from Public URL
 Use this when you have an existing image/video URL on the web:
-- **Endpoint**: `POST /api/v1/media/upload-from-url`
+- **Endpoint**: `POST {BASE_URL}/api/v1/media/upload-from-url`
 - **Request Body**:
   ```json
   {
@@ -39,13 +39,13 @@ Use this when you have an existing image/video URL on the web:
 #### Option B: Presigned Direct Upload Lifecycle (3-Step R2 Handshake)
 When handling local files or binary streams:
 1. **Request Presigned URL**:
-   - `POST /api/v1/media/upload-request`
+   - `POST {BASE_URL}/api/v1/media/upload-request`
    - Body: `{"file_name": "photo.jpg", "mime_type": "image/jpeg", "file_size_bytes": 102400}`
    - Save `upload_url` and `media.id`.
 2. **Upload Binary to R2**:
    - `PUT <upload_url>` with raw binary bytes and `Content-Type: image/jpeg`.
 3. **Confirm Upload**:
-   - `POST /api/v1/media/{media_id}/confirm`
+   - `POST {BASE_URL}/api/v1/media/{media_id}/confirm`
    - Transitions the media from staging to confirmed.
 
 *Note: Media linked to DRAFT, SCHEDULED, or ARCHIVED posts is protected by CMMI's 7-day retention policy and cannot be accidentally deleted.*
@@ -55,7 +55,7 @@ When handling local files or binary streams:
 ### 2. Publication Calendar & Schedule Audit
 
 Check what content is pending, scheduled, or overdue:
-- **Endpoint**: `GET /api/v1/contents?status=SCHEDULED&limit=50`
+- **Endpoint**: `GET {BASE_URL}/api/v1/contents?status=SCHEDULED&limit=50`
 - **Audit Logic**:
   - Compare each item's `scheduled_at` timestamp with current UTC time (`datetime.now(timezone.utc)`).
   - If `scheduled_at <= now`, flag as **OVERDUE** (ready for immediate publishing).
@@ -66,7 +66,7 @@ Check what content is pending, scheduled, or overdue:
 ### 3. Content Creation & Scheduling
 
 Create new articles or social posts:
-- **Endpoint**: `POST /api/v1/contents`
+- **Endpoint**: `POST {BASE_URL}/api/v1/contents`
 - **Request Body**:
   ```json
   {
@@ -87,7 +87,7 @@ Create new articles or social posts:
 ### 4. Updating Content
 
 Modify existing posts or reschedule:
-- **Endpoint**: `PATCH /api/v1/contents/{content_id}`
+- **Endpoint**: `PATCH {BASE_URL}/api/v1/contents/{content_id}`
 - **Request Body**: (Pass only the fields to update)
   ```json
   {
@@ -101,7 +101,7 @@ Modify existing posts or reschedule:
 ### 5. Publishing & Social ID Synchronization
 
 When a post is published to external social platforms, synchronize the IDs back to CMMI:
-- **Endpoint**: `PATCH /api/v1/contents/{content_id}`
+- **Endpoint**: `PATCH {BASE_URL}/api/v1/contents/{content_id}`
 - **Request Body**:
   ```json
   {
