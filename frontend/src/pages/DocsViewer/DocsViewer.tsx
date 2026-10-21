@@ -103,106 +103,26 @@ export default function DocsViewer({ api: _api, onNavigateToApiKeys }: DocsViewe
     }, 2000);
   };
 
-  const claudeConfigJson = JSON.stringify(
-    {
-      mcpServers: {
-        cmmi: {
-          command: 'python',
-          args: ['<duong-dan-toi-agent-kit>/server.py'],
-          env: {
-            CMMI_BASE_URL: effectiveBaseUrl,
-            CMMI_API_KEY: customApiKey.trim() || '{CMMI-API-KEY}',
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
+  const buildPromptText = `Bạn là AI Agent của tôi. Hãy tự động phát hiện môi trường, kết nối và cài đặt toàn diện CMMI Platform cho dự án này theo 4 bước sau:
 
-  const gptInstructions = `Bạn là CMMI Assistant — Trợ lý điều hành nội dung và quản lý truyền thông kết nối với CMMI Platform.
-Nhiệm vụ:
-1. Khi người dùng muốn xem lịch hoặc danh sách bài viết: Gọi action GET /api/v1/contents (hoặc kiểm tra status=SCHEDULED).
-2. Khi người dùng tạo bài viết mới: Tạo bài qua POST /api/v1/contents với định dạng giờ scheduled_at chuẩn UTC ISO-8601.
-3. Khi người dùng cung cấp link ảnh/video từ mạng hoặc DALL-E: Gọi action POST /api/v1/media/upload-from-url để nạp vào Cloudflare R2, rồi lấy media_id gắn vào bài viết.
-4. Khi bài viết đã đăng MXH (Facebook, TikTok, YouTube): Gọi PATCH /api/v1/contents/{id} đổi status sang PUBLISHED và gắn Social Post ID tương ứng.`;
-
-  const cursorRulesText = `## CMMI Platform — Agent Skill (Zero-Setup)
-Tất cả cấu hình được móc tự động từ file .env (CMMI_BASE_URL=${effectiveBaseUrl} và CMMI_API_KEY=${activeKeyDisplay}).
-Khi người dùng yêu cầu liên quan đến quản lý nội dung:
-1. Nạp ảnh vào Cloudflare R2: Gọi POST ${effectiveBaseUrl}/api/v1/media/upload-from-url bằng curl.
-2. Kiểm tra lịch đăng: Gọi GET ${effectiveBaseUrl}/api/v1/contents?status=SCHEDULED bằng curl.
-3. Tạo bài & lên lịch: Gọi POST ${effectiveBaseUrl}/api/v1/contents (chuẩn hóa giờ UTC).
-4. Đồng bộ đã đăng MXH: Gọi PATCH ${effectiveBaseUrl}/api/v1/contents/{id} đổi status sang PUBLISHED.`;
-
-  const universalSkillText = `---
-name: cmmi-agent-kit
-description: Điều phối và tự động hóa toàn diện CMMI Platform (Content & Media Management Infrastructure). Tích hợp kiến thức đa kênh, chuẩn hóa múi giờ UTC, bảo vệ Cloudflare R2 Media Retention và kiến trúc phân vai Subagent qua cURL RESTful API.
----
-
-# CMMI Platform — Universal Agent & Subagent Orchestration Skill (cURL First)
-Base URL: ${effectiveBaseUrl}
-X-API-Key: ${activeKeyDisplay}
-
-## 🧠 HỆ THỐNG KIẾN THỨC NỀN TẢNG (SAFEGUARDS):
-1. **Chuẩn Múi Giờ UTC**: Toàn bộ scheduled_at phải dùng định dạng UTC ISO-8601 (Giờ UTC = Giờ địa phương - 7 tiếng đối với GMT+7). Tuyệt đối không gửi giờ địa phương chưa quy đổi.
-2. **Media Retention 7 ngày**: Media liên kết với bài DRAFT, SCHEDULED, ARCHIVED hoặc vừa PUBLISHED < 7 ngày được bảo vệ tuyệt đối trên Cloudflare R2.
-3. **Quy chuẩn kênh**:
-   - FACEBOOK: Ảnh 1:1 hoặc 4:5; Caption 150-350 từ; 3-5 hashtags.
-   - TIKTOK: Video dọc 9:16 (1080x1920); Caption < 150 ký tự; 4-6 hashtags.
-   - YOUTUBE: Video 16:9 hoặc Shorts 9:16; Title < 70 ký tự; Mô tả có Timestamps.
-   - BLOG: Banner 16:9; 800-2500 từ chuẩn Markdown H1, H2, H3.
-
-## 👥 MA TRẬN PHÂN VAI SUBAGENT:
-- 👑 Content Lead: Tiếp nhận mục tiêu, chia việc và báo cáo tổng kết.
-- 🎨 Media Specialist: Nạp ảnh/video vào R2 bằng upload-from-url hoặc upload 3 bước để lấy media_ids.
-- ✍️ Copywriter Specialist: Soạn thảo tiêu đề, nội dung Markdown chuẩn kênh.
-- ⏱️ Schedule Auditor: Kiểm tra lịch GET /contents?status=SCHEDULED, rà soát trùng lịch và bài OVERDUE.
-- 🔄 Social Sync Operator: Cập nhật fb_post_id, tiktok_post_id sau khi xuất bản.
-
-## 🧭 HƯỚNG DẪN THỰC THI CHO AGENT:
-- Có quyền Terminal / Shell: Tự động chạy ngầm các lệnh curl bên dưới (sử dụng biến $CMMI_BASE_URL từ .env hoặc URL trực tiếp).
-- Chat Web (Claude.ai Web, ChatGPT): Soạn sẵn khối lệnh curl hoàn chỉnh (đã điền đủ URL, API Key, payload JSON) để người dùng 1-Click Copy chạy trên máy tính.
-
-## 🛠️ CÁC LỆNH cURL CHUẨN:
-# 1. Kiểm tra lịch đăng bài (Schedule Audit):
-curl -s -X GET "${effectiveBaseUrl}/api/v1/contents?status=SCHEDULED&limit=50" \\
-  -H "X-API-Key: ${activeKeyDisplay}"
-
-# 2. Nạp ảnh từ mạng vào Cloudflare R2 (1 Bước):
-curl -s -X POST "${effectiveBaseUrl}/api/v1/media/upload-from-url" \\
-  -H "X-API-Key: ${activeKeyDisplay}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com/photo.jpg", "file_name": "banner.jpg"}'
-
-# 3. Tạo bài viết & Lên lịch đăng (UTC ISO-8601):
-curl -s -X POST "${effectiveBaseUrl}/api/v1/contents" \\
-  -H "X-API-Key: ${activeKeyDisplay}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"title": "Tiêu đề", "body": "Nội dung Markdown", "status": "SCHEDULED", "scheduled_at": "2026-10-25T02:00:00Z", "channel": "FACEBOOK", "media_ids": []}'
-
-# 4. Xác nhận bài đã đăng mạng xã hội:
-curl -s -X PATCH "${effectiveBaseUrl}/api/v1/contents/<CONTENT_ID>" \\
-  -H "X-API-Key: ${activeKeyDisplay}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"status": "PUBLISHED", "fb_post_id": "123456789"}'`;
-
-  const buildPromptText = `Bạn là AI Agent của tôi. Hãy tự động kết nối và thiết lập toàn diện hệ thống CMMI Platform cho dự án này theo 4 bước sau:
-
-1. TỰ ĐỘNG THIẾT LẬP FILE .ENV:
-- Kiểm tra file \`.env\` ở thư mục gốc của workspace (nếu chưa có hãy tạo mới).
+1. TỰ ĐỘNG PHÁT HIỆN MÔI TRƯỜNG & THIẾT LẬP FILE .ENV:
+- Tự động kiểm tra file \`.env\` ở thư mục gốc của workspace (nếu chưa có hãy tạo mới).
 - Đảm bảo 2 biến môi trường sau được cấu hình chính xác (nếu đã có thì cập nhật, nếu chưa thì thêm vào cuối file):
 CMMI_BASE_URL=${effectiveBaseUrl}
 CMMI_API_KEY=${activeKeyDisplay}
 
-2. TỰ ĐỘNG NẠP AGENT SKILL:
+2. TỰ ĐỘNG NẠP AGENT SKILL & MCP (AUTO-DETECT):
 - Tải nội dung Skill CMMI từ endpoint:
   ${effectiveBaseUrl}/api/v1/tools/skill
-  và lưu vào file \`agent-kit/SKILL.md\` (hoặc \`.agents/skills/cmmi-automation/SKILL.md\`).
-- Đọc và tuân thủ các quy trình điều phối đa kênh, múi giờ UTC và phân vai 5 Subagent trong Skill.
+- Tự động nhận diện công cụ đang sử dụng để đặt Skill / Rule vào đúng vị trí:
+  + Nếu là Antigravity: Lưu vào \`.agents/skills/cmmi-automation/SKILL.md\`
+  + Nếu là Cursor: Tạo hoặc cập nhật \`.cursorrules\` và \`agent-kit/SKILL.md\`
+  + Nếu là Windsurf: Tạo hoặc cập nhật \`.windsurfrules\` và \`agent-kit/SKILL.md\`
+  + Nếu là Claude Code / Claude Desktop: Lưu Skill vào workspace hoặc cấu hình MCP Server
+- Đọc và tuân thủ các safeguards: chuẩn hóa múi giờ UTC, bảo vệ Cloudflare R2 Media Retention 7 ngày, quy chuẩn 4 kênh (Facebook, TikTok, YouTube, Blog) và phân vai 5 Subagent trong Skill.
 
-3. TỰ ĐỘNG KIỂM TRA KẾT NỐI (TEST END-TO-END):
-- Test 1 (Kiểm tra Server sống):
+3. TỰ ĐỘNG CHẠY TEST KẾT NỐI (TEST END-TO-END):
+- Test 1 (Kiểm tra Backend Server sống):
   curl -s "${effectiveBaseUrl}/health"
 - Test 2 (Kiểm tra xác thực API Key):
   curl -s -H "X-API-Key: ${activeKeyDisplay}" "${effectiveBaseUrl}/api/v1/contents?limit=1"
@@ -210,6 +130,7 @@ CMMI_API_KEY=${activeKeyDisplay}
 4. BÁO CÁO KẾT QUẢ CHO TÔI:
 - Trả về bảng kết quả kiểm tra định dạng Markdown:
   | Hạng mục | Trạng thái | Ghi chú |
+  | Môi trường phát hiện | [Tên IDE / Agent] | Auto-detected |
   | Backend Server | ✅/❌ | URL: ${effectiveBaseUrl} |
   | CMMI API Key | ✅/❌ | Xác thực quyền truy cập |
   | CMMI Agent Skill | ✅/❌ | Đã nạp thành công vào workspace |
@@ -396,19 +317,19 @@ CMMI_API_KEY=${activeKeyDisplay}
                 <h3>Card Build Prompt — Thiết Lập AI Agent Tự Động Từ A-Z</h3>
               </div>
               <span className="agent-build-prompt-card__badge">
-                <Sparkles size={13} /> 1 Prompt Tự Động Hóa 100%
+                <Sparkles size={13} /> 1 Prompt Auto-Detect & Cài Đặt 100%
               </span>
             </div>
             <p className="agent-build-prompt-card__desc">
               Chỉ cần sao chép 1 Prompt duy nhất dưới đây và dán vào <strong>Cursor, Claude Code, Antigravity, hoặc Windsurf</strong>.
-              AI Agent sẽ <strong>tự thêm Skill vào hệ thống</strong>, <strong>tự điền Key vào file <code>.env</code></strong>, <strong>tự chạy lệnh test kết nối</strong> và <strong>in bảng báo cáo kết quả</strong> ngay trong khung chat!
+              AI Agent sẽ <strong>tự động nhận diện môi trường IDE</strong>, <strong>tự động nạp Skill & Rules</strong>, <strong>tự cấu hình file <code>.env</code></strong>, <strong>tự chạy lệnh test kết nối</strong> và <strong>in bảng báo cáo kết quả</strong> ngay trong khung chat!
             </p>
             <div className="agent-build-prompt-card__steps-preview">
               <span className="step-pill">
-                <span className="step-num">1</span> Tự cấu hình .env (URL & API Key)
+                <span className="step-num">1</span> Tự phát hiện môi trường & .env
               </span>
               <span className="step-pill">
-                <span className="step-num">2</span> Tự nạp CMMI Agent Skill
+                <span className="step-num">2</span> Tự nạp Skill & Rules (Auto-detect)
               </span>
               <span className="step-pill">
                 <span className="step-num">3</span> Tự chạy test cURL /health & Auth
@@ -480,154 +401,6 @@ CMMI_API_KEY=${activeKeyDisplay}
                   )}
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Quickstart 3 Platforms */}
-          <div className="agent-platforms-grid">
-            {/* Platform 1: Claude Web & Desktop */}
-            <div className="panel platform-card">
-              <div className="platform-card__header">
-                <div className="platform-badge platform-badge--claude">Claude (Web Skill & Desktop)</div>
-                <div className="platform-card__actions">
-                  <button
-                    className="icon-copy-btn"
-                    title="Sao chép toàn bộ Universal cURL Skill (Không cần cài đặt)"
-                    onClick={() => copyToClipboard(universalSkillText, 'curl-skill')}
-                  >
-                    {copiedKey === 'curl-skill' ? (
-                      <>
-                        <Check size={14} /> Đã sao chép
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={14} /> Copy cURL Skill
-                      </>
-                    )}
-                  </button>
-                  <button
-                    className="icon-copy-btn"
-                    title="Sao chép cấu hình JSON cho Claude Desktop"
-                    onClick={() => copyToClipboard(claudeConfigJson, 'claude')}
-                  >
-                    {copiedKey === 'claude' ? (
-                      <>
-                        <Check size={14} /> Đã chép
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} /> JSON
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-              <h4>1. Claude (Web Skill cURL & Desktop MCP)</h4>
-              <p>
-                <strong>Cách A — Universal cURL Skill (0 Cài Đặt - Khuyên Dùng):</strong><br />
-                Bấm <strong>Copy cURL Skill</strong> ở trên và dán thẳng vào phiên chat (hoặc tải file <code>SKILL.md</code> lên). Claude sẽ tự động điều phối và soạn sẵn lệnh cURL chuẩn để bạn 1-Click Copy chạy trên máy tính.
-              </p>
-              <p style={{ marginTop: '0.6rem' }}>
-                <strong>Cách B — Claude Desktop (Native MCP Tools 🔨):</strong>
-              </p>
-              <div className="code-block-wrapper">
-                <pre>
-                  <code>{claudeConfigJson}</code>
-                </pre>
-              </div>
-              <ol className="platform-steps">
-                <li>
-                  Chạy <code>pip install -r requirements.txt</code> trong thư mục agent-kit.
-                </li>
-                <li>
-                  Dán khối JSON trên vào <code>%APPDATA%\Claude\claude_desktop_config.json</code>.
-                </li>
-                <li>Khởi động lại Claude Desktop để nhận 7 tools của CMMI.</li>
-              </ol>
-            </div>
-
-            {/* Platform 2: ChatGPT Custom GPTs */}
-            <div className="panel platform-card">
-              <div className="platform-card__header">
-                <div className="platform-badge platform-badge--gpt">ChatGPT Plus</div>
-                <div className="platform-card__actions">
-                  <button
-                    className="icon-copy-btn"
-                    onClick={() => copyToClipboard(openApiUrl, 'openapi-url')}
-                  >
-                    {copiedKey === 'openapi-url' ? <Check size={14} /> : <Copy size={14} />} Copy
-                    URL
-                  </button>
-                  <button
-                    className="icon-copy-btn"
-                    onClick={() => copyToClipboard(gptInstructions, 'gpt-prompt')}
-                  >
-                    {copiedKey === 'gpt-prompt' ? <Check size={14} /> : <Copy size={14} />} Copy
-                    Prompt
-                  </button>
-                </div>
-              </div>
-              <h4>2. ChatGPT Custom GPT (GPT Actions)</h4>
-              <p>
-                Tích hợp trực tiếp vào ChatGPT Web thông qua chuẩn OpenAPI 3.1 Function Calling:
-              </p>
-              <div className="code-block-wrapper">
-                <pre>
-                  <code>{openApiUrl}</code>
-                </pre>
-              </div>
-              <ol className="platform-steps">
-                <li>
-                  Trong ChatGPT, tạo <strong>Custom GPT</strong> ➔ mục <strong>Actions</strong>.
-                </li>
-                <li>
-                  Bấm <strong>Import from URL</strong> và dán đường link OpenAPI ở trên.
-                </li>
-                <li>
-                  Chọn Authentication: <code>API Key</code> ➔ Header Name: <code>X-API-Key</code>.
-                </li>
-                <li>
-                  Bấm <strong>Copy Prompt</strong> ở trên và dán vào ô <strong>Instructions</strong>
-                  .
-                </li>
-              </ol>
-            </div>
-
-            {/* Platform 3: Cursor & Antigravity */}
-            <div className="panel platform-card">
-              <div className="platform-card__header">
-                <div className="platform-badge platform-badge--cursor">Cursor / Antigravity</div>
-                <button
-                  className="icon-copy-btn"
-                  onClick={() => copyToClipboard(cursorRulesText, 'cursor')}
-                >
-                  {copiedKey === 'cursor' ? (
-                    <>
-                      <Check size={14} /> Đã sao chép
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} /> Copy Rules
-                    </>
-                  )}
-                </button>
-              </div>
-              <h4>3. Cursor, Windsurf & AI IDEs</h4>
-              <p>Điều khiển nền tảng CMMI ngay trong thanh chat của trình soạn thảo mã nguồn:</p>
-              <div className="code-block-wrapper">
-                <pre>
-                  <code>{cursorRulesText}</code>
-                </pre>
-              </div>
-              <ol className="platform-steps">
-                <li>
-                  Thêm MCP server trong Settings Cursor: Command{' '}
-                  <code>python &lt;agent-kit&gt;/server.py</code>.
-                </li>
-                <li>
-                  Dán nội dung Rules trên vào file <code>.cursorrules</code> của workspace.
-                </li>
-              </ol>
             </div>
           </div>
 
