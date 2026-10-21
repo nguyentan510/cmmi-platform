@@ -157,6 +157,12 @@ class UploadResponse(Contract):
     headers: dict[str, str]
 
 
+class MediaUploadFromUrl(Contract):
+    url: str = Field(min_length=1, max_length=2048, description="Public HTTP/HTTPS URL of image or video to download")
+    file_name: str | None = Field(default=None, max_length=255, description="Optional custom filename with extension")
+
+
+
 class ContentCreate(Contract):
     title: str = Field(min_length=1, max_length=255)
     body: str = ""

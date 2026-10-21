@@ -1,15 +1,18 @@
 import logging
+import mimetypes
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException, Query, Request, Response
+import httpx
+from fastapi import Depends, File, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy import select
 
 from app.api.deps import DB, own, require
 from app.api.router import Router
 from app.db.session import mutation_lock
 from app.models import ContentMediaLink, MediaAsset
-from app.schemas import MediaRead, MediaType, Role, UploadRequest, UploadResponse
+from app.schemas import MIME_TYPES, MediaRead, MediaType, MediaUploadFromUrl, Role, UploadRequest, UploadResponse
+
 
 router = Router(prefix="/media", tags=["Media"])
 log = logging.getLogger(__name__)
@@ -64,6 +67,126 @@ async def request_upload(
     return UploadResponse(
         media=MediaRead.model_validate(record), upload_url=url, headers={"Content-Type": record.mime_type}
     )
+
+
+@router.post(
+    "/upload-from-url",
+    response_model=MediaRead,
+    status_code=201,
+    summary="Download media from URL and ingest directly into R2",
+)
+async def upload_from_url(
+    payload: MediaUploadFromUrl, db: DB, request: Request, principal=Depends(require("media:write"))
+):
+    """Download an image or video from an external URL and store it directly in R2."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            resp = await client.get(str(payload.url))
+            if resp.status_code != 200:
+                raise HTTPException(400, f"Failed to download media from URL (status {resp.status_code})")
+            content = resp.content
+            mime_type = resp.headers.get("content-type", "").split(";")[0].strip().lower()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(400, f"Network error downloading media: {exc}")
+
+    if mime_type not in MIME_TYPES:
+        url_path = str(payload.url).split("?")[0]
+        guessed, _ = mimetypes.guess_type(url_path)
+        if guessed and guessed in MIME_TYPES:
+            mime_type = guessed
+
+    if mime_type not in MIME_TYPES:
+        raise HTTPException(422, f"Unsupported image or video MIME type: {mime_type}")
+
+    file_size_bytes = len(content)
+    if file_size_bytes == 0:
+        raise HTTPException(422, "Downloaded file is empty")
+    if file_size_bytes > 100_000_000:
+        raise HTTPException(422, "File size exceeds 100MB limit for URL upload")
+
+    file_name = payload.file_name
+    if not file_name:
+        url_file = str(payload.url).split("?")[0].rstrip("/").split("/")[-1]
+        file_name = url_file if url_file and "." in url_file else f"media_{uuid4().hex[:8]}"
+        if "." not in file_name:
+            ext = mimetypes.guess_extension(mime_type) or ".bin"
+            file_name += ext
+
+    media_id = uuid4()
+    key = f"{principal.user.id}/{media_id}"
+    try:
+        await request.app.state.storage.put(key, content, mime_type)
+    except Exception:
+        raise HTTPException(502, "Unable to save media to R2 storage")
+
+    record = MediaAsset(
+        id=media_id,
+        uploader_id=principal.user.id,
+        r2_object_key=key,
+        file_name=file_name,
+        mime_type=mime_type,
+        file_size_bytes=file_size_bytes,
+        media_type=MediaType.IMAGE if mime_type.startswith("image/") else MediaType.VIDEO,
+        upload_confirmed=True,
+        public_url=request.app.state.settings.r2_public_domain.rstrip("/") + "/" + key,
+    )
+    db.add(record)
+    await db.commit()
+    return MediaRead.model_validate(record)
+
+
+@router.post(
+    "/upload-direct",
+    response_model=MediaRead,
+    status_code=201,
+    summary="Upload media directly via multipart/form-data",
+)
+async def upload_direct(
+    file: UploadFile = File(...),
+    db: DB = None,
+    request: Request = None,
+    principal=Depends(require("media:write")),
+):
+    """Direct 1-step multipart form-data upload for AI bots and automation clients."""
+    mime_type = file.content_type.split(";")[0].strip().lower() if file.content_type else ""
+    if mime_type not in MIME_TYPES:
+        guessed, _ = mimetypes.guess_type(file.filename or "")
+        if guessed and guessed in MIME_TYPES:
+            mime_type = guessed
+
+    if mime_type not in MIME_TYPES:
+        raise HTTPException(422, f"Unsupported image or video MIME type: {mime_type}")
+
+    content = await file.read()
+    file_size_bytes = len(content)
+    if file_size_bytes == 0:
+        raise HTTPException(422, "Uploaded file is empty")
+    if file_size_bytes > 100_000_000:
+        raise HTTPException(422, "File size exceeds 100MB limit for direct upload")
+
+    media_id = uuid4()
+    key = f"{principal.user.id}/{media_id}"
+    try:
+        await request.app.state.storage.put(key, content, mime_type)
+    except Exception:
+        raise HTTPException(502, "Unable to save media to R2 storage")
+
+    record = MediaAsset(
+        id=media_id,
+        uploader_id=principal.user.id,
+        r2_object_key=key,
+        file_name=file.filename or f"media_{media_id}",
+        mime_type=mime_type,
+        file_size_bytes=file_size_bytes,
+        media_type=MediaType.IMAGE if mime_type.startswith("image/") else MediaType.VIDEO,
+        upload_confirmed=True,
+        public_url=request.app.state.settings.r2_public_domain.rstrip("/") + "/" + key,
+    )
+    db.add(record)
+    await db.commit()
+    return MediaRead.model_validate(record)
 
 
 @router.post("/{media_id}/confirm", response_model=MediaRead, summary="Verify and confirm an R2 upload")

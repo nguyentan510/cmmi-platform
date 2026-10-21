@@ -7,7 +7,9 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.contents import router as contents_router
 from app.api.v1.media import router as media_router
 from app.api.v1.settings import router as settings_router
+from app.api.v1.tools_agent import router as tools_router
 from app.api.v1.docs_ai import router as docs_router
+
 from app.core.config import Settings, get_settings
 from app.core.r2_client import R2Storage
 from app.db.session import local_lock, make_engine, session_factory
@@ -52,7 +54,9 @@ def create_app(settings: Settings | None = None):
     app.include_router(contents_router, prefix="/api/v1")
     app.include_router(media_router, prefix="/api/v1")
     app.include_router(settings_router, prefix="/api/v1")
+    app.include_router(tools_router, prefix="/api/v1")
     app.include_router(docs_router)
+
     return app
 
 

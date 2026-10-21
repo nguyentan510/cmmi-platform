@@ -19,6 +19,17 @@ class FakeStorage:
         obj = self.objects[key]
         return {"ETag": f'"{obj["ContentLength"]}-{obj["ContentType"]}"', **obj}
 
+    async def put(self, key, body, content_type):
+        if self.fail_all or key in self.fail_keys:
+            raise OSError("Storage unavailable")
+        self.objects[key] = {
+            "ContentLength": len(body),
+            "ContentType": content_type,
+            "Body": body,
+            "ETag": f'"{len(body)}-{content_type}"',
+        }
+
+
     async def promote(self, source, target, etag):
         if (await self.head(source))["ETag"] != etag:
             raise OSError("Source changed")

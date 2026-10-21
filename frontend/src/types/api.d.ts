@@ -164,6 +164,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/media/upload-direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload media directly via multipart/form-data
+         * @description Direct 1-step multipart form-data upload for AI bots and automation clients.
+         */
+        post: operations["upload_direct_api_v1_media_upload_direct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/upload-from-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download media from URL and ingest directly into R2
+         * @description Download an image or video from an external URL and store it directly in R2.
+         */
+        post: operations["upload_from_url_api_v1_media_upload_from_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/media/upload-request": {
         parameters: {
             query?: never;
@@ -262,6 +302,28 @@ export interface paths {
          * @description Run the same retention policy as cron. Disabled cleanup is skipped. Shared media is deleted only when every reference is an expired publication; partial R2 failures remain retryable.
          */
         post: operations["trigger_cleanup_api_v1_settings_cleanup_trigger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/agent-kit.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the complete CMMI Agent Toolkit (.zip)
+         * @description Generates and serves a ZIP archive containing the CMMI MCP server, dependencies,
+         *
+         *         quickstart README, and client configuration templates for Claude, ChatGPT, and Cursor.
+         */
+        get: operations["download_agent_kit_api_v1_tools_agent_kit_zip_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -376,6 +438,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Body_upload_direct_api_v1_media_upload_direct_post */
+        Body_upload_direct_api_v1_media_upload_direct_post: {
+            /** File */
+            file: string;
+        };
         /** CleanupResult */
         CleanupResult: {
             /**
@@ -603,6 +670,19 @@ export interface components {
          * @enum {string}
          */
         MediaType: "IMAGE" | "VIDEO";
+        /** MediaUploadFromUrl */
+        MediaUploadFromUrl: {
+            /**
+             * File Name
+             * @description Optional custom filename with extension
+             */
+            file_name?: string | null;
+            /**
+             * Url
+             * @description Public HTTP/HTTPS URL of image or video to download
+             */
+            url: string;
+        };
         /**
          * Role
          * @enum {string}
@@ -1120,6 +1200,72 @@ export interface operations {
             };
         };
     };
+    upload_direct_api_v1_media_upload_direct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_direct_api_v1_media_upload_direct_post"];
+            };
+        };
+        responses: {
+            /** @description Successful result. See the response schema for field details. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_from_url_api_v1_media_upload_from_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUploadFromUrl"];
+            };
+        };
+        responses: {
+            /** @description Successful result. See the response schema for field details. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     request_upload_api_v1_media_upload_request_post: {
         parameters: {
             query?: never;
@@ -1282,6 +1428,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CleanupResult"];
+                };
+            };
+        };
+    };
+    download_agent_kit_api_v1_tools_agent_kit_zip_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A ready-to-use zip bundle containing MCP server, instructions and configuration templates. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
