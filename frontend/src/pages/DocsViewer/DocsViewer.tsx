@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowUpRight,
   BookOpen,
@@ -15,6 +15,7 @@ import {
   Leaf,
   Sparkles,
   Terminal,
+  Wand2,
 } from 'lucide-react';
 import type { Api } from '../../services/api';
 
@@ -36,6 +37,17 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
   const llmsFullUrl = `${apiBase}/llms-full.txt`;
   const [customServerUrl, setCustomServerUrl] = useState(apiBase || 'http://localhost:8000');
   const [customApiKey, setCustomApiKey] = useState('');
+
+  useEffect(() => {
+    fetch(`${apiBase}/api/v1/tools/config`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.base_url) {
+          setCustomServerUrl(data.base_url);
+        }
+      })
+      .catch(() => {});
+  }, [apiBase]);
 
   const activeKeyDisplay = customApiKey.trim() || 'cmmi_live_your_api_key_here';
 
@@ -63,10 +75,6 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
         cmmi: {
           command: 'python',
           args: ['<duong-dan-toi-agent-kit>/server.py'],
-          env: {
-            CMMI_BASE_URL: customServerUrl.trim(),
-            CMMI_API_KEY: activeKeyDisplay,
-          },
         },
       },
     },
@@ -81,13 +89,93 @@ Nhiệm vụ:
 3. Khi người dùng cung cấp link ảnh/video từ mạng hoặc DALL-E: Gọi action POST /api/v1/media/upload-from-url để nạp vào Cloudflare R2, rồi lấy media_id gắn vào bài viết.
 4. Khi bài viết đã đăng MXH (Facebook, TikTok, YouTube): Gọi PATCH /api/v1/contents/{id} đổi status sang PUBLISHED và gắn Social Post ID tương ứng.`;
 
-  const cursorRulesText = `## CMMI Platform Assistant
-Bạn có quyền truy cập vào CMMI Platform thông qua MCP Server cmmi.
+  const cursorRulesText = `## CMMI Platform — Agent Skill (Zero-Setup)
+Tất cả cấu hình được móc tự động từ file .env (CMMI_BASE_URL và CMMI_API_KEY).
 Khi người dùng yêu cầu liên quan đến quản lý nội dung:
-1. Upload media: Dùng tool cmmi_upload_media với đường dẫn file cục bộ (VD: D:/clip.mp4).
-2. Kiểm tra lịch đăng: Dùng cmmi_check_schedule để xem các bài sắp đến hạn hoặc quá hạn.
-3. Tạo & sửa bài: Dùng cmmi_create_content và cmmi_update_content.
-4. Đồng bộ đã đăng: Dùng cmmi_sync_published để lưu ID bài viết Facebook/TikTok/YouTube.`;
+1. Nạp ảnh vào Cloudflare R2: Gọi POST /api/v1/media/upload-from-url bằng curl.
+2. Kiểm tra lịch đăng: Gọi GET /api/v1/contents?status=SCHEDULED bằng curl.
+3. Tạo bài & lên lịch: Gọi POST /api/v1/contents (chuẩn hóa giờ UTC).
+4. Đồng bộ đã đăng MXH: Gọi PATCH /api/v1/contents/{id} đổi status sang PUBLISHED.`;
+
+  const universalSkillText = `---
+name: cmmi-agent-kit
+description: Điều phối và tự động hóa toàn diện CMMI Platform (Content & Media Management Infrastructure). Tích hợp kiến thức đa kênh, chuẩn hóa múi giờ UTC, bảo vệ Cloudflare R2 Media Retention và kiến trúc phân vai Subagent qua cURL RESTful API.
+---
+
+# CMMI Platform — Universal Agent & Subagent Orchestration Skill (cURL First)
+Base URL: ${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}
+X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}
+
+## 🧠 HỆ THỐNG KIẾN THỨC NỀN TẢNG (SAFEGUARDS):
+1. **Chuẩn Múi Giờ UTC**: Toàn bộ scheduled_at phải dùng định dạng UTC ISO-8601 (Giờ UTC = Giờ địa phương - 7 tiếng đối với GMT+7). Tuyệt đối không gửi giờ địa phương chưa quy đổi.
+2. **Media Retention 7 ngày**: Media liên kết với bài DRAFT, SCHEDULED, ARCHIVED hoặc vừa PUBLISHED < 7 ngày được bảo vệ tuyệt đối trên Cloudflare R2.
+3. **Quy chuẩn kênh**:
+   - FACEBOOK: Ảnh 1:1 hoặc 4:5; Caption 150-350 từ; 3-5 hashtags.
+   - TIKTOK: Video dọc 9:16 (1080x1920); Caption < 150 ký tự; 4-6 hashtags.
+   - YOUTUBE: Video 16:9 hoặc Shorts 9:16; Title < 70 ký tự; Mô tả có Timestamps.
+   - BLOG: Banner 16:9; 800-2500 từ chuẩn Markdown H1, H2, H3.
+
+## 👥 MA TRẬN PHÂN VAI SUBAGENT:
+- 👑 Content Lead: Tiếp nhận mục tiêu, chia việc và báo cáo tổng kết.
+- 🎨 Media Specialist: Nạp ảnh/video vào R2 bằng upload-from-url hoặc upload 3 bước để lấy media_ids.
+- ✍️ Copywriter Specialist: Soạn thảo tiêu đề, nội dung Markdown chuẩn kênh.
+- ⏱️ Schedule Auditor: Kiểm tra lịch GET /contents?status=SCHEDULED, rà soát trùng lịch và bài OVERDUE.
+- 🔄 Social Sync Operator: Cập nhật fb_post_id, tiktok_post_id sau khi xuất bản.
+
+## 🧭 HƯỚNG DẪN THỰC THI CHO AGENT:
+- Có quyền Terminal / Shell: Tự động chạy ngầm các lệnh curl bên dưới.
+- Chat Web (Claude.ai Web, ChatGPT): Soạn sẵn khối lệnh curl hoàn chỉnh (đã điền đủ URL, API Key, payload JSON) để người dùng 1-Click Copy chạy trên máy tính.
+
+## 🛠️ CÁC LỆNH cURL CHUẨN:
+# 1. Kiểm tra lịch đăng bài (Schedule Audit):
+curl -s -X GET "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/contents?status=SCHEDULED&limit=50" \\
+  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}"
+
+# 2. Nạp ảnh từ mạng vào Cloudflare R2 (1 Bước):
+curl -s -X POST "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/media/upload-from-url" \\
+  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"url": "https://example.com/photo.jpg", "file_name": "banner.jpg"}'
+
+# 3. Tạo bài viết & Lên lịch đăng (UTC ISO-8601):
+curl -s -X POST "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/contents" \\
+  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"title": "Tiêu đề", "body": "Nội dung Markdown", "status": "SCHEDULED", "scheduled_at": "2026-10-25T02:00:00Z", "channel": "FACEBOOK", "media_ids": []}'
+
+# 4. Xác nhận bài đã đăng mạng xã hội:
+curl -s -X PATCH "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/contents/<CONTENT_ID>" \\
+  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"status": "PUBLISHED", "fb_post_id": "123456789"}'`;
+
+  const buildPromptText = `Bạn là AI Agent của tôi. Hãy tự động kết nối và thiết lập toàn diện hệ thống CMMI Platform cho dự án này theo 4 bước sau:
+
+1. TỰ ĐỘNG THIẾT LẬP FILE .ENV:
+- Kiểm tra file \`.env\` ở thư mục gốc của workspace (nếu chưa có hãy tạo mới).
+- Đảm bảo 2 biến môi trường sau được cấu hình chính xác (nếu đã có thì cập nhật, nếu chưa thì thêm vào cuối file):
+CMMI_BASE_URL=${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}
+CMMI_API_KEY=${activeKeyDisplay}
+
+2. TỰ ĐỘNG NẠP AGENT SKILL:
+- Tải nội dung Skill CMMI từ endpoint:
+  ${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}/api/v1/tools/skill
+  và lưu vào file \`agent-kit/SKILL.md\` (hoặc \`.agents/skills/cmmi-automation/SKILL.md\`).
+- Đọc và tuân thủ các quy trình điều phối đa kênh, múi giờ UTC và phân vai 5 Subagent trong Skill.
+
+3. TỰ ĐỘNG KIỂM TRA KẾT NỐI (TEST END-TO-END):
+- Test 1 (Kiểm tra Server sống):
+  curl -s "${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}/health"
+- Test 2 (Kiểm tra xác thực API Key):
+  curl -s -H "X-API-Key: ${activeKeyDisplay}" "${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}/api/v1/contents?limit=1"
+
+4. BÁO CÁO KẾT QUẢ CHO TÔI:
+- Trả về bảng kết quả kiểm tra định dạng Markdown:
+  | Hạng mục | Trạng thái | Ghi chú |
+  | Backend Server | ✅/❌ | URL: ${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'} |
+  | CMMI API Key | ✅/❌ | Xác thực quyền truy cập |
+  | CMMI Agent Skill | ✅/❌ | Đã nạp thành công vào workspace |
+- Đưa ra 1 gợi ý lệnh tiếp theo để tôi có thể bắt đầu tạo hoặc lên lịch nội dung ngay.`;
 
   return (
     <div className="docs">
@@ -196,35 +284,109 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
             </div>
           </div>
 
+          {/* Card Build Prompt — 1-Click Master Setup */}
+          <div className="agent-build-prompt-card panel">
+            <div className="agent-build-prompt-card__header">
+              <div className="agent-build-prompt-card__title-group">
+                <Wand2 size={20} color="#059669" />
+                <h3>Card Build Prompt — Thiết Lập AI Agent Tự Động Từ A-Z</h3>
+              </div>
+              <span className="agent-build-prompt-card__badge">
+                <Sparkles size={13} /> 1 Prompt Tự Động Hóa 100%
+              </span>
+            </div>
+            <p className="agent-build-prompt-card__desc">
+              Chỉ cần sao chép 1 Prompt duy nhất dưới đây và dán vào <strong>Cursor, Claude Code, Antigravity, hoặc Windsurf</strong>.
+              AI Agent sẽ <strong>tự thêm Skill vào hệ thống</strong>, <strong>tự điền Key vào file <code>.env</code></strong>, <strong>tự chạy lệnh test kết nối</strong> và <strong>in bảng báo cáo kết quả</strong> ngay trong khung chat!
+            </p>
+            <div className="agent-build-prompt-card__steps-preview">
+              <span className="step-pill">
+                <span className="step-num">1</span> Tự cấu hình .env (URL & API Key)
+              </span>
+              <span className="step-pill">
+                <span className="step-num">2</span> Tự nạp CMMI Agent Skill
+              </span>
+              <span className="step-pill">
+                <span className="step-num">3</span> Tự chạy test cURL /health & Auth
+              </span>
+              <span className="step-pill">
+                <span className="step-num">4</span> Báo cáo bảng trạng thái chi tiết
+              </span>
+            </div>
+            <div className="agent-build-prompt-card__code-container">
+              <pre>
+                <code>{buildPromptText}</code>
+              </pre>
+            </div>
+            <div className="agent-build-prompt-card__footer">
+              <div className="target-hint">
+                <span>Server đích:</span>
+                <strong>{customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}</strong>
+              </div>
+              <button
+                className="button button--primary button--large"
+                style={{ background: '#059669', borderColor: '#059669', color: '#fff' }}
+                onClick={() => copyToClipboard(buildPromptText, 'build-prompt')}
+              >
+                {copiedKey === 'build-prompt' ? (
+                  <>
+                    <Check size={16} /> Đã sao chép Build Prompt
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} /> Sao chép Build Prompt (1-Click)
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Quickstart 3 Platforms */}
           <div className="agent-platforms-grid">
             {/* Platform 1: Claude Web & Desktop */}
             <div className="panel platform-card">
               <div className="platform-card__header">
                 <div className="platform-badge platform-badge--claude">Claude (Web Skill & Desktop)</div>
-                <button
-                  className="icon-copy-btn"
-                  title="Sao chép cấu hình JSON"
-                  onClick={() => copyToClipboard(claudeConfigJson, 'claude')}
-                >
-                  {copiedKey === 'claude' ? (
-                    <>
-                      <Check size={14} /> Đã sao chép
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} /> Copy JSON
-                    </>
-                  )}
-                </button>
+                <div className="platform-card__actions">
+                  <button
+                    className="icon-copy-btn"
+                    title="Sao chép toàn bộ Universal cURL Skill (Không cần cài đặt)"
+                    onClick={() => copyToClipboard(universalSkillText, 'curl-skill')}
+                  >
+                    {copiedKey === 'curl-skill' ? (
+                      <>
+                        <Check size={14} /> Đã sao chép
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} /> Copy cURL Skill
+                      </>
+                    )}
+                  </button>
+                  <button
+                    className="icon-copy-btn"
+                    title="Sao chép cấu hình JSON cho Claude Desktop"
+                    onClick={() => copyToClipboard(claudeConfigJson, 'claude')}
+                  >
+                    {copiedKey === 'claude' ? (
+                      <>
+                        <Check size={14} /> Đã chép
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} /> JSON
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-              <h4>1. Claude (Skill Upload & Desktop MCP)</h4>
+              <h4>1. Claude (Web Skill cURL & Desktop MCP)</h4>
               <p>
-                <strong>Cách A — Upload Skill lên Claude.ai Web:</strong><br />
-                Vào <strong>Settings ➔ Skills ➔ Upload a skill</strong> rồi tải trực tiếp file <code>cmmi-agent-kit.zip</code> lên (đã có sẵn <code>SKILL.md</code> ở gốc file zip theo chuẩn Anthropic).
+                <strong>Cách A — Universal cURL Skill (0 Cài Đặt - Khuyên Dùng):</strong><br />
+                Bấm <strong>Copy cURL Skill</strong> ở trên và dán thẳng vào phiên chat (hoặc tải file <code>SKILL.md</code> lên). Claude sẽ tự động điều phối và soạn sẵn lệnh cURL chuẩn để bạn 1-Click Copy chạy trên máy tính.
               </p>
               <p style={{ marginTop: '0.6rem' }}>
-                <strong>Cách B — Claude Desktop & Code (MCP Stdio):</strong>
+                <strong>Cách B — Claude Desktop (Native MCP Tools 🔨):</strong>
               </p>
               <div className="code-block-wrapper">
                 <pre>
@@ -233,12 +395,12 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
               </div>
               <ol className="platform-steps">
                 <li>
-                  Giải nén file zip và chạy <code>pip install -r requirements.txt</code>.
+                  Chạy <code>pip install -r requirements.txt</code> trong thư mục agent-kit.
                 </li>
                 <li>
                   Dán khối JSON trên vào <code>%APPDATA%\Claude\claude_desktop_config.json</code>.
                 </li>
-                <li>Khởi động lại Claude Desktop để nhận 6 tools của CMMI.</li>
+                <li>Khởi động lại Claude Desktop để nhận 7 tools của CMMI.</li>
               </ol>
             </div>
 

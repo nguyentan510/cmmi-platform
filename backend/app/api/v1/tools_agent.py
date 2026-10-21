@@ -6,6 +6,7 @@ from typing import Optional
 import zipfile
 
 from fastapi import HTTPException, Query, Request, Response
+from fastapi.responses import PlainTextResponse
 
 from app.api.router import Router
 
@@ -32,6 +33,71 @@ def get_agent_kit_dir() -> Path:
     return app_dir
 
 
+def resolve_request_base_url(request: Request, custom_url: Optional[str] = None) -> str:
+    """Dynamically determine the backend base URL from incoming request headers."""
+    target_url = (custom_url or "").strip().rstrip("/")
+    if not target_url:
+        forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+        forwarded_host = request.headers.get("x-forwarded-host", request.url.netloc)
+        target_url = f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+        if "0.0.0.0" in target_url:
+            target_url = target_url.replace("0.0.0.0", "localhost")
+    return target_url
+
+
+@router.get(
+    "/config",
+    summary="Get active server connectivity info for AI Agents and Frontend",
+    response_description="Returns dynamic base_url and host information for the agent.",
+)
+async def get_server_config(request: Request):
+    """Returns the dynamic base URL of the currently running backend instance."""
+    base_url = resolve_request_base_url(request)
+    return {
+        "base_url": base_url,
+        "health_url": f"{base_url}/health",
+        "openapi_url": f"{base_url}/openapi.json",
+        "llms_url": f"{base_url}/llms.txt",
+        "skill_url": f"{base_url}/api/v1/tools/skill",
+        "status": "ok",
+    }
+
+
+@router.get(
+    "/skill",
+    summary="Get dynamic CMMI Agent Skill (SKILL.md)",
+    response_description="Plain text markdown SKILL.md dynamically tailored to the active backend server URL.",
+    response_class=PlainTextResponse,
+)
+@router.get(
+    "/SKILL.md",
+    include_in_schema=False,
+    response_class=PlainTextResponse,
+)
+async def get_dynamic_skill(
+    request: Request,
+    base_url: Optional[str] = Query(None, description="Optional custom base URL to inject into SKILL.md"),
+    api_key: Optional[str] = Query(None, description="Optional API key to inject into SKILL.md"),
+):
+    """Returns SKILL.md dynamically tailored with the active server base URL and optional API key."""
+    target_url = resolve_request_base_url(request, base_url)
+    target_api_key = (api_key or "").strip() or "cmmi_live_your_api_key_here"
+
+    agent_kit_dir = get_agent_kit_dir()
+    skill_file = agent_kit_dir / "SKILL.md"
+    if not skill_file.exists():
+        raise HTTPException(404, "SKILL.md not found on server")
+
+    with open(skill_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Dynamically inject the active backend URL and API key
+    content = content.replace("https://cmmi-backend.onrender.com", target_url)
+    content = content.replace("cmmi_live_your_key_here", target_api_key)
+
+    return PlainTextResponse(content, media_type="text/markdown; charset=utf-8")
+
+
 @router.get(
     "/agent-kit.zip",
     summary="Download the complete CMMI Agent Toolkit (.zip)",
@@ -42,29 +108,17 @@ async def download_agent_kit(
     base_url: Optional[str] = Query(None, description="Optional custom base URL to pre-configure inside the zip"),
     api_key: Optional[str] = Query(None, description="Optional API key to pre-configure inside the zip"),
 ):
-    """Generates and serves a dynamically tailored ZIP archive containing the CMMI MCP server,
-
-    dependencies, quickstart README, and client configuration templates customized to the current domain.
-    """
+    """Generates and serves a dynamically tailored ZIP archive customized to the current domain."""
     agent_kit_dir = get_agent_kit_dir()
 
     if not agent_kit_dir.exists():
         raise HTTPException(404, "Agent toolkit directory not found on server")
 
-    # Determine target URL dynamically
-    target_url = (base_url or "").strip().rstrip("/")
-    if not target_url:
-        forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-        forwarded_host = request.headers.get("x-forwarded-host", request.url.netloc)
-        target_url = f"{forwarded_proto}://{forwarded_host}".rstrip("/")
-        if "0.0.0.0" in target_url:
-            target_url = target_url.replace("0.0.0.0", "localhost")
-
+    target_url = resolve_request_base_url(request, base_url)
     target_api_key = (api_key or "").strip()
 
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        # Include all files in agent-kit at root of archive with dynamic customizations
         for root, _, files in os.walk(agent_kit_dir):
             for file in files:
                 file_path = Path(root) / file
@@ -75,9 +129,23 @@ async def download_agent_kit(
                         with open(file_path, "r", encoding="utf-8") as f:
                             cfg = json.load(f)
                         if "mcpServers" in cfg and "cmmi" in cfg["mcpServers"]:
+                            if "env" not in cfg["mcpServers"]["cmmi"]:
+                                cfg["mcpServers"]["cmmi"]["env"] = {}
                             cfg["mcpServers"]["cmmi"]["env"]["CMMI_BASE_URL"] = target_url
                             cfg["mcpServers"]["cmmi"]["env"]["CMMI_API_KEY"] = target_api_key
                         zip_file.writestr(archive_name, json.dumps(cfg, indent=2))
+                        continue
+                    except Exception:
+                        pass
+
+                elif file == "SKILL.md":
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            skill_text = f.read()
+                        skill_text = skill_text.replace("https://cmmi-backend.onrender.com", target_url)
+                        if target_api_key:
+                            skill_text = skill_text.replace("cmmi_live_your_key_here", target_api_key)
+                        zip_file.writestr(archive_name, skill_text)
                         continue
                     except Exception:
                         pass
@@ -97,14 +165,10 @@ async def download_agent_kit(
                         pass
 
                 elif file == ".env.example":
-                    env_ex = f"""# CMMI Platform Agent Toolkit Configuration
-
-# Base URL of your CMMI Platform instance (auto-tailored for: {target_url})
-# - Sử dụng "{target_url}" để kết nối tới server này.
-# - Hoặc điền "{{BASE_URL}}" / "auto" để tự động dò tìm giữa localhost và cloud.
+                    env_ex = f"""# CMMI Platform Agent Skill Configuration
+# - Base URL tự động đồng bộ theo backend server: {target_url}
+# - Điền "auto" để tự phát hiện giữa localhost và cloud
 CMMI_BASE_URL={target_url}
-
-# Your CMMI API Key (starts with cmmi_live_...)
 CMMI_API_KEY={target_api_key}
 """
                     zip_file.writestr(archive_name, env_ex)
@@ -115,7 +179,7 @@ CMMI_API_KEY={target_api_key}
                         with open(file_path, "r", encoding="utf-8") as f:
                             readme = f.read()
                         readme = readme.replace("http://localhost:8000", target_url)
-                        readme = readme.replace("https://<ten-domain-cmmi-cua-ban>", target_url)
+                        readme = readme.replace("https://cmmi-backend.onrender.com", target_url)
                         if target_api_key:
                             readme = readme.replace("cmmi_live_your_key_here", target_api_key)
                         zip_file.writestr(archive_name, readme)
@@ -127,8 +191,8 @@ CMMI_API_KEY={target_api_key}
                 zip_file.write(file_path, archive_name)
 
         # Inject pre-configured .env directly into the ZIP archive
-        env_content = f"""# CMMI Platform Agent Toolkit Configuration
-# Tự động tối ưu hóa theo domain: {target_url}
+        env_content = f"""# CMMI Platform Agent Skill Configuration
+# Tự động đồng bộ theo Backend Server: {target_url}
 
 CMMI_BASE_URL={target_url}
 CMMI_API_KEY={target_api_key}

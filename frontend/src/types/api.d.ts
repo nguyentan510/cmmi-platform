@@ -317,11 +317,49 @@ export interface paths {
         };
         /**
          * Download the complete CMMI Agent Toolkit (.zip)
-         * @description Generates and serves a dynamically tailored ZIP archive containing the CMMI MCP server,
-         *
-         *         dependencies, quickstart README, and client configuration templates customized to the current domain.
+         * @description Generates and serves a dynamically tailored ZIP archive customized to the current domain.
          */
         get: operations["download_agent_kit_api_v1_tools_agent_kit_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get active server connectivity info for AI Agents and Frontend
+         * @description Returns the dynamic base URL of the currently running backend instance.
+         */
+        get: operations["get_server_config_api_v1_tools_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/skill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get dynamic CMMI Agent Skill (SKILL.md)
+         * @description Returns SKILL.md dynamically tailored with the active server base URL and optional API key.
+         */
+        get: operations["get_dynamic_skill_api_v1_tools_skill_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1453,6 +1491,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_server_config_api_v1_tools_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Returns dynamic base_url and host information for the agent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_dynamic_skill_api_v1_tools_skill_get: {
+        parameters: {
+            query?: {
+                /** @description Optional custom base URL to inject into SKILL.md */
+                base_url?: string | null;
+                /** @description Optional API key to inject into SKILL.md */
+                api_key?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plain text markdown SKILL.md dynamically tailored to the active backend server URL. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
                 };
             };
             /** @description Validation Error */

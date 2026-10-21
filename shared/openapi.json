@@ -1989,7 +1989,7 @@
     },
     "/api/v1/tools/agent-kit.zip": {
       "get": {
-        "description": "Generates and serves a dynamically tailored ZIP archive containing the CMMI MCP server,\n\n    dependencies, quickstart README, and client configuration templates customized to the current domain.",
+        "description": "Generates and serves a dynamically tailored ZIP archive customized to the current domain.",
         "operationId": "download_agent_kit_api_v1_tools_agent_kit_zip_get",
         "parameters": [
           {
@@ -2050,6 +2050,96 @@
           }
         },
         "summary": "Download the complete CMMI Agent Toolkit (.zip)",
+        "tags": [
+          "Agent Tools"
+        ]
+      }
+    },
+    "/api/v1/tools/config": {
+      "get": {
+        "description": "Returns the dynamic base URL of the currently running backend instance.",
+        "operationId": "get_server_config_api_v1_tools_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Returns dynamic base_url and host information for the agent."
+          }
+        },
+        "summary": "Get active server connectivity info for AI Agents and Frontend",
+        "tags": [
+          "Agent Tools"
+        ]
+      }
+    },
+    "/api/v1/tools/skill": {
+      "get": {
+        "description": "Returns SKILL.md dynamically tailored with the active server base URL and optional API key.",
+        "operationId": "get_dynamic_skill_api_v1_tools_skill_get",
+        "parameters": [
+          {
+            "description": "Optional custom base URL to inject into SKILL.md",
+            "in": "query",
+            "name": "base_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional custom base URL to inject into SKILL.md",
+              "title": "Base Url"
+            }
+          },
+          {
+            "description": "Optional API key to inject into SKILL.md",
+            "in": "query",
+            "name": "api_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional API key to inject into SKILL.md",
+              "title": "Api Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Plain text markdown SKILL.md dynamically tailored to the active backend server URL."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get dynamic CMMI Agent Skill (SKILL.md)",
         "tags": [
           "Agent Tools"
         ]
