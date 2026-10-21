@@ -2,10 +2,10 @@
   "mcpServers": {
     "cmmi": {
       "command": "python",
-      "args": ["d:/cmmi-platform/agent-kit/server.py"],
+      "args": ["<duong-dan-toi-agent-kit>/server.py"],
       "env": {
-        "CMMI_BASE_URL": "https://cmmi-backend.onrender.com",
-        "CMMI_API_KEY": ""
+        "CMMI_BASE_URL": "{BASE-URL}",
+        "CMMI_API_KEY": "{CMMI-API-KEY}"
       }
     }
   }

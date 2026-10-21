@@ -13,11 +13,11 @@
 Tất cả các Agent khi hoạt động trong workspace sẽ **tự động đọc cấu hình từ file `.env`**:
 
 ```env
-# URL của CMMI Platform (mặc định cloud hoặc http://localhost:8000)
-CMMI_BASE_URL=https://cmmi-backend.onrender.com
+# URL của CMMI Platform (điền biến động {BASE-URL}, URL thực tế hoặc "auto" để tự động dò tìm)
+CMMI_BASE_URL={BASE-URL}
 
 # API Key của bạn (tạo tại CMMI Platform -> Settings -> API Keys)
-CMMI_API_KEY=cmmi_live_your_api_key_here
+CMMI_API_KEY={CMMI-API-KEY}
 ```
 
 ---

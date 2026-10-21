@@ -36,13 +36,44 @@ def get_agent_kit_dir() -> Path:
 def resolve_request_base_url(request: Request, custom_url: Optional[str] = None) -> str:
     """Dynamically determine the backend base URL from incoming request headers."""
     target_url = (custom_url or "").strip().rstrip("/")
-    if not target_url:
+    placeholder_values = {
+        "",
+        "auto",
+        "{base-url}",
+        "{base_url}",
+        "${base-url}",
+        "${base_url}",
+        "<base-url>",
+        "<base_url>",
+    }
+    if target_url.lower() in placeholder_values:
         forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
         forwarded_host = request.headers.get("x-forwarded-host", request.url.netloc)
         target_url = f"{forwarded_proto}://{forwarded_host}".rstrip("/")
         if "0.0.0.0" in target_url:
             target_url = target_url.replace("0.0.0.0", "localhost")
     return target_url
+
+
+def inject_dynamic_variables(content: str, target_url: str, target_api_key: str) -> str:
+    """Dynamically injects active server URL and API key into templates containing {BASE-URL}."""
+    for p in ("{BASE-URL}", "{BASE_URL}", "https://cmmi-backend.onrender.com", "http://localhost:8000"):
+        content = content.replace(p, target_url)
+
+    clean_host = target_url.replace("https://", "").replace("http://", "")
+    content = content.replace("<ten-domain-cmmi-cua-ban>", clean_host)
+    content = content.replace("https://<ten-domain-cmmi-cua-ban>", target_url)
+
+    if target_api_key:
+        for k in (
+            "{CMMI-API-KEY}",
+            "<Dán API Key của bạn (bắt đầu bằng cmmi_live_...)>",
+            "cmmi_live_your_key_here",
+            "cmmi_live_your_api_key_here",
+        ):
+            content = content.replace(k, target_api_key)
+
+    return content
 
 
 @router.get(
@@ -55,6 +86,7 @@ async def get_server_config(request: Request):
     base_url = resolve_request_base_url(request)
     return {
         "base_url": base_url,
+        "placeholder": "{BASE-URL}",
         "health_url": f"{base_url}/health",
         "openapi_url": f"{base_url}/openapi.json",
         "llms_url": f"{base_url}/llms.txt",
@@ -92,8 +124,7 @@ async def get_dynamic_skill(
         content = f.read()
 
     # Dynamically inject the active backend URL and API key
-    content = content.replace("https://cmmi-backend.onrender.com", target_url)
-    content = content.replace("cmmi_live_your_key_here", target_api_key)
+    content = inject_dynamic_variables(content, target_url, target_api_key)
 
     return PlainTextResponse(content, media_type="text/markdown; charset=utf-8")
 
@@ -132,7 +163,7 @@ async def download_agent_kit(
                             if "env" not in cfg["mcpServers"]["cmmi"]:
                                 cfg["mcpServers"]["cmmi"]["env"] = {}
                             cfg["mcpServers"]["cmmi"]["env"]["CMMI_BASE_URL"] = target_url
-                            cfg["mcpServers"]["cmmi"]["env"]["CMMI_API_KEY"] = target_api_key
+                            cfg["mcpServers"]["cmmi"]["env"]["CMMI_API_KEY"] = target_api_key or "{CMMI-API-KEY}"
                         zip_file.writestr(archive_name, json.dumps(cfg, indent=2))
                         continue
                     except Exception:
@@ -142,9 +173,7 @@ async def download_agent_kit(
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             skill_text = f.read()
-                        skill_text = skill_text.replace("https://cmmi-backend.onrender.com", target_url)
-                        if target_api_key:
-                            skill_text = skill_text.replace("cmmi_live_your_key_here", target_api_key)
+                        skill_text = inject_dynamic_variables(skill_text, target_url, target_api_key)
                         zip_file.writestr(archive_name, skill_text)
                         continue
                     except Exception:
@@ -154,11 +183,7 @@ async def download_agent_kit(
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             content = f.read()
-                        content = content.replace("https://<ten-domain-cmmi-cua-ban>", target_url)
-                        clean_host = target_url.replace("https://", "").replace("http://", "")
-                        content = content.replace("<ten-domain-cmmi-cua-ban>", clean_host)
-                        if target_api_key:
-                            content = content.replace("<Dán API Key của bạn (bắt đầu bằng cmmi_live_...)>", target_api_key)
+                        content = inject_dynamic_variables(content, target_url, target_api_key)
                         zip_file.writestr(archive_name, content)
                         continue
                     except Exception:
@@ -167,9 +192,9 @@ async def download_agent_kit(
                 elif file == ".env.example":
                     env_ex = f"""# CMMI Platform Agent Skill Configuration
 # - Base URL tự động đồng bộ theo backend server: {target_url}
-# - Điền "auto" để tự phát hiện giữa localhost và cloud
+# - Hoặc điền biến động {{BASE-URL}} / "auto" để tự phát hiện server
 CMMI_BASE_URL={target_url}
-CMMI_API_KEY={target_api_key}
+CMMI_API_KEY={target_api_key or "{CMMI-API-KEY}"}
 """
                     zip_file.writestr(archive_name, env_ex)
                     continue
@@ -178,10 +203,7 @@ CMMI_API_KEY={target_api_key}
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             readme = f.read()
-                        readme = readme.replace("http://localhost:8000", target_url)
-                        readme = readme.replace("https://cmmi-backend.onrender.com", target_url)
-                        if target_api_key:
-                            readme = readme.replace("cmmi_live_your_key_here", target_api_key)
+                        readme = inject_dynamic_variables(readme, target_url, target_api_key)
                         zip_file.writestr(archive_name, readme)
                         continue
                     except Exception:
@@ -195,7 +217,7 @@ CMMI_API_KEY={target_api_key}
 # Tự động đồng bộ theo Backend Server: {target_url}
 
 CMMI_BASE_URL={target_url}
-CMMI_API_KEY={target_api_key}
+CMMI_API_KEY={target_api_key or "{CMMI-API-KEY}"}
 """
         zip_file.writestr(".env", env_content)
 
@@ -203,7 +225,7 @@ CMMI_API_KEY={target_api_key}
         try:
             openapi_data = request.app.openapi()
             openapi_data["servers"] = [
-                {"url": target_url, "description": "Current CMMI server"}
+                {"url": target_url, "description": "Active CMMI Server"}
             ]
             zip_file.writestr(
                 "shared/openapi.json",

@@ -5,9 +5,9 @@ Trong cài đặt Custom GPT (Create a GPT -> Configure -> Actions -> Create new
 - Chọn **Authentication**:
   - Auth Type: `API Key`
   - Header Name: `X-API-Key`
-  - Auth Token: `<Dán API Key của bạn (bắt đầu bằng cmmi_live_...)>`
+  - Auth Token: `{CMMI-API-KEY}` (bắt đầu bằng `cmmi_live_...`)
 - Chọn **Schema**:
-  - Bấm **Import from URL** và nhập: `https://<ten-domain-cmmi-cua-ban>/openapi.json`
+  - Bấm **Import from URL** và nhập: `{BASE-URL}/openapi.json`
   - Hoặc sao chép nội dung file `shared/openapi.json` và dán vào ô Schema.
 
 ---

@@ -1567,6 +1567,36 @@ td:has(> .table-marker) {
         background: v.$surface;
       }
     }
+
+    .agent-url-presets {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+
+      .agent-url-preset-btn {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: v.$radius-sm;
+        border: 1px solid v.$border;
+        background: v.$surface;
+        color: v.$text-muted;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          border-color: v.$brand-primary;
+          color: v.$brand-primary;
+        }
+
+        &--active {
+          background: rgba(59, 130, 246, 0.1);
+          border-color: v.$brand-primary;
+          color: v.$brand-primary;
+          font-weight: 600;
+        }
+      }
+    }
   }
 }
 

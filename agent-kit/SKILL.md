@@ -96,9 +96,9 @@ Tùy vào quyền hạn và môi trường (modal/runtime) của bạn, hãy ch�
 Mọi cấu hình cho Agent được tập trung tại file `.env` của dự án. Agent **tự động nạp các biến sau từ file `.env`** (hoặc biến môi trường hệ thống) mà không đòi hỏi cài đặt công cụ hay thư viện phụ trợ:
 
 * **`CMMI_BASE_URL`** (Động theo Backend Server):
-  - **Khi đặt `CMMI_BASE_URL=auto` (hoặc để trống)**:
-    - Agent tự động dò tìm: ưu tiên kiểm tra `http://localhost:8000/health` (nếu bạn đang chạy backend local), nếu không có sẽ tự động fallback tới cloud backend (`https://cmmi-backend.onrender.com` hoặc custom domain của bạn).
-  - **Khi đặt URL cụ thể**: Sử dụng chính xác URL đó (ví dụ: `http://localhost:8000`, `https://cmmi-backend.onrender.com`, `https://cmmi.trenux.site`).
+  - **Khi sử dụng biến động `{BASE-URL}` hoặc `auto` (hoặc để trống)**:
+    - Agent và Toolkit tự động bám theo domain của Backend Server đang hoạt động (tự động giải quyết qua server host, hoặc tự động dò tìm giữa backend local và cloud).
+  - **Khi đặt URL cụ thể**: Sử dụng chính xác URL đó (ví dụ: `http://localhost:8000`, `https://cmmi.trenux.site`, hoặc domain máy chủ CMMI của bạn).
 * **`CMMI_API_KEY`**:
   - API Key của bạn (bắt đầu bằng `cmmi_live_...`), dùng làm giá trị xác thực cho header `X-API-Key`.
 * **Cơ chế nạp biến của Agent**:

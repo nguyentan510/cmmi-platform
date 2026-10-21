@@ -84,7 +84,18 @@ async def resolve_base_url() -> str:
 
     reload_env()
     env_url = os.environ.get("CMMI_BASE_URL", "").strip()
-    if env_url and env_url.lower() not in ("auto", "{base_url}", "${base_url}", "<base_url>"):
+    placeholder_values = {
+        "auto",
+        "{base-url}",
+        "{base_url}",
+        "${base-url}",
+        "${base_url}",
+        "<base-url>",
+        "<base_url>",
+        "base-url",
+        "base_url",
+    }
+    if env_url and env_url.lower() not in placeholder_values:
         return env_url.rstrip("/")
 
     # Dynamic auto-discovery

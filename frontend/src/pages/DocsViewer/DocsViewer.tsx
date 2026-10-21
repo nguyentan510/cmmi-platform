@@ -35,7 +35,8 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
   const openApiUrl = `${apiBase}/openapi.json`;
   const llmsUrl = `${apiBase}/llms.txt`;
   const llmsFullUrl = `${apiBase}/llms-full.txt`;
-  const [customServerUrl, setCustomServerUrl] = useState(apiBase || 'http://localhost:8000');
+  const [customServerUrl, setCustomServerUrl] = useState('');
+  const [detectedServerUrl, setDetectedServerUrl] = useState(apiBase || '');
   const [customApiKey, setCustomApiKey] = useState('');
 
   useEffect(() => {
@@ -43,19 +44,21 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.base_url) {
-          setCustomServerUrl(data.base_url);
+          setDetectedServerUrl(data.base_url);
         }
       })
       .catch(() => {});
   }, [apiBase]);
 
-  const activeKeyDisplay = customApiKey.trim() || 'cmmi_live_your_api_key_here';
+  // Dynamic Base URL: tracks live server, user custom domain, or flexible {BASE-URL} template
+  const effectiveBaseUrl = customServerUrl.trim() || detectedServerUrl || '{BASE-URL}';
+  const activeKeyDisplay = customApiKey.trim() || '{CMMI-API-KEY}';
 
   const downloadParams = new URLSearchParams();
-  if (customServerUrl.trim()) {
+  if (customServerUrl.trim() && customServerUrl.trim() !== '{BASE-URL}') {
     downloadParams.set('base_url', customServerUrl.trim());
   }
-  if (customApiKey.trim()) {
+  if (customApiKey.trim() && customApiKey.trim() !== '{CMMI-API-KEY}') {
     downloadParams.set('api_key', customApiKey.trim());
   }
   const downloadQuery = downloadParams.toString();
@@ -75,6 +78,10 @@ export default function DocsViewer({ api: _api }: DocsViewerProps) {
         cmmi: {
           command: 'python',
           args: ['<duong-dan-toi-agent-kit>/server.py'],
+          env: {
+            CMMI_BASE_URL: effectiveBaseUrl,
+            CMMI_API_KEY: customApiKey.trim() || '{CMMI-API-KEY}',
+          },
         },
       },
     },
@@ -90,12 +97,12 @@ Nhiệm vụ:
 4. Khi bài viết đã đăng MXH (Facebook, TikTok, YouTube): Gọi PATCH /api/v1/contents/{id} đổi status sang PUBLISHED và gắn Social Post ID tương ứng.`;
 
   const cursorRulesText = `## CMMI Platform — Agent Skill (Zero-Setup)
-Tất cả cấu hình được móc tự động từ file .env (CMMI_BASE_URL và CMMI_API_KEY).
+Tất cả cấu hình được móc tự động từ file .env (CMMI_BASE_URL=${effectiveBaseUrl} và CMMI_API_KEY=${activeKeyDisplay}).
 Khi người dùng yêu cầu liên quan đến quản lý nội dung:
-1. Nạp ảnh vào Cloudflare R2: Gọi POST /api/v1/media/upload-from-url bằng curl.
-2. Kiểm tra lịch đăng: Gọi GET /api/v1/contents?status=SCHEDULED bằng curl.
-3. Tạo bài & lên lịch: Gọi POST /api/v1/contents (chuẩn hóa giờ UTC).
-4. Đồng bộ đã đăng MXH: Gọi PATCH /api/v1/contents/{id} đổi status sang PUBLISHED.`;
+1. Nạp ảnh vào Cloudflare R2: Gọi POST ${effectiveBaseUrl}/api/v1/media/upload-from-url bằng curl.
+2. Kiểm tra lịch đăng: Gọi GET ${effectiveBaseUrl}/api/v1/contents?status=SCHEDULED bằng curl.
+3. Tạo bài & lên lịch: Gọi POST ${effectiveBaseUrl}/api/v1/contents (chuẩn hóa giờ UTC).
+4. Đồng bộ đã đăng MXH: Gọi PATCH ${effectiveBaseUrl}/api/v1/contents/{id} đổi status sang PUBLISHED.`;
 
   const universalSkillText = `---
 name: cmmi-agent-kit
@@ -103,8 +110,8 @@ description: Điều phối và tự động hóa toàn diện CMMI Platform (Co
 ---
 
 # CMMI Platform — Universal Agent & Subagent Orchestration Skill (cURL First)
-Base URL: ${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}
-X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}
+Base URL: ${effectiveBaseUrl}
+X-API-Key: ${activeKeyDisplay}
 
 ## 🧠 HỆ THỐNG KIẾN THỨC NỀN TẢNG (SAFEGUARDS):
 1. **Chuẩn Múi Giờ UTC**: Toàn bộ scheduled_at phải dùng định dạng UTC ISO-8601 (Giờ UTC = Giờ địa phương - 7 tiếng đối với GMT+7). Tuyệt đối không gửi giờ địa phương chưa quy đổi.
@@ -123,29 +130,29 @@ X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}
 - 🔄 Social Sync Operator: Cập nhật fb_post_id, tiktok_post_id sau khi xuất bản.
 
 ## 🧭 HƯỚNG DẪN THỰC THI CHO AGENT:
-- Có quyền Terminal / Shell: Tự động chạy ngầm các lệnh curl bên dưới.
+- Có quyền Terminal / Shell: Tự động chạy ngầm các lệnh curl bên dưới (sử dụng biến $CMMI_BASE_URL từ .env hoặc URL trực tiếp).
 - Chat Web (Claude.ai Web, ChatGPT): Soạn sẵn khối lệnh curl hoàn chỉnh (đã điền đủ URL, API Key, payload JSON) để người dùng 1-Click Copy chạy trên máy tính.
 
 ## 🛠️ CÁC LỆNH cURL CHUẨN:
 # 1. Kiểm tra lịch đăng bài (Schedule Audit):
-curl -s -X GET "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/contents?status=SCHEDULED&limit=50" \\
-  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}"
+curl -s -X GET "${effectiveBaseUrl}/api/v1/contents?status=SCHEDULED&limit=50" \\
+  -H "X-API-Key: ${activeKeyDisplay}"
 
 # 2. Nạp ảnh từ mạng vào Cloudflare R2 (1 Bước):
-curl -s -X POST "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/media/upload-from-url" \\
-  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}" \\
+curl -s -X POST "${effectiveBaseUrl}/api/v1/media/upload-from-url" \\
+  -H "X-API-Key: ${activeKeyDisplay}" \\
   -H "Content-Type: application/json" \\
   -d '{"url": "https://example.com/photo.jpg", "file_name": "banner.jpg"}'
 
 # 3. Tạo bài viết & Lên lịch đăng (UTC ISO-8601):
-curl -s -X POST "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/contents" \\
-  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}" \\
+curl -s -X POST "${effectiveBaseUrl}/api/v1/contents" \\
+  -H "X-API-Key: ${activeKeyDisplay}" \\
   -H "Content-Type: application/json" \\
   -d '{"title": "Tiêu đề", "body": "Nội dung Markdown", "status": "SCHEDULED", "scheduled_at": "2026-10-25T02:00:00Z", "channel": "FACEBOOK", "media_ids": []}'
 
 # 4. Xác nhận bài đã đăng mạng xã hội:
-curl -s -X PATCH "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com'}/api/v1/contents/<CONTENT_ID>" \\
-  -H "X-API-Key: ${activeKeyDisplay || 'cmmi_live_your_key_here'}" \\
+curl -s -X PATCH "${effectiveBaseUrl}/api/v1/contents/<CONTENT_ID>" \\
+  -H "X-API-Key: ${activeKeyDisplay}" \\
   -H "Content-Type: application/json" \\
   -d '{"status": "PUBLISHED", "fb_post_id": "123456789"}'`;
 
@@ -154,25 +161,25 @@ curl -s -X PATCH "${customServerUrl.trim() || 'https://cmmi-backend.onrender.com
 1. TỰ ĐỘNG THIẾT LẬP FILE .ENV:
 - Kiểm tra file \`.env\` ở thư mục gốc của workspace (nếu chưa có hãy tạo mới).
 - Đảm bảo 2 biến môi trường sau được cấu hình chính xác (nếu đã có thì cập nhật, nếu chưa thì thêm vào cuối file):
-CMMI_BASE_URL=${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}
+CMMI_BASE_URL=${effectiveBaseUrl}
 CMMI_API_KEY=${activeKeyDisplay}
 
 2. TỰ ĐỘNG NẠP AGENT SKILL:
 - Tải nội dung Skill CMMI từ endpoint:
-  ${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}/api/v1/tools/skill
+  ${effectiveBaseUrl}/api/v1/tools/skill
   và lưu vào file \`agent-kit/SKILL.md\` (hoặc \`.agents/skills/cmmi-automation/SKILL.md\`).
 - Đọc và tuân thủ các quy trình điều phối đa kênh, múi giờ UTC và phân vai 5 Subagent trong Skill.
 
 3. TỰ ĐỘNG KIỂM TRA KẾT NỐI (TEST END-TO-END):
 - Test 1 (Kiểm tra Server sống):
-  curl -s "${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}/health"
+  curl -s "${effectiveBaseUrl}/health"
 - Test 2 (Kiểm tra xác thực API Key):
-  curl -s -H "X-API-Key: ${activeKeyDisplay}" "${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}/api/v1/contents?limit=1"
+  curl -s -H "X-API-Key: ${activeKeyDisplay}" "${effectiveBaseUrl}/api/v1/contents?limit=1"
 
 4. BÁO CÁO KẾT QUẢ CHO TÔI:
 - Trả về bảng kết quả kiểm tra định dạng Markdown:
   | Hạng mục | Trạng thái | Ghi chú |
-  | Backend Server | ✅/❌ | URL: ${customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'} |
+  | Backend Server | ✅/❌ | URL: ${effectiveBaseUrl} |
   | CMMI API Key | ✅/❌ | Xác thực quyền truy cập |
   | CMMI Agent Skill | ✅/❌ | Đã nạp thành công vào workspace |
 - Đưa ra 1 gợi ý lệnh tiếp theo để tôi có thể bắt đầu tạo hoặc lên lịch nội dung ngay.`;
@@ -226,7 +233,7 @@ CMMI_API_KEY=${activeKeyDisplay}
           <div className="agent-download-banner panel">
             <div className="agent-download-banner__left">
               <div className="agent-download-badge">
-                <Sparkles size={14} /> Gói Tự Động Gắn Sẵn Domain ({customServerUrl || apiBase || 'localhost'})
+                <Sparkles size={14} /> Gói Tự Động Gắn Sẵn Domain ({effectiveBaseUrl})
               </div>
               <h3>CMMI Agent Toolkit (.zip)</h3>
               <p>
@@ -264,13 +271,39 @@ CMMI_API_KEY=${activeKeyDisplay}
             </p>
             <div className="agent-config-inputs">
               <div className="agent-input-field">
-                <label>CMMI Base URL:</label>
+                <label>CMMI Base URL ({customServerUrl ? 'Đang chọn' : 'Tự động bám theo Server'}):</label>
                 <input
                   type="text"
                   value={customServerUrl}
                   onChange={(e) => setCustomServerUrl(e.target.value)}
-                  placeholder="http://localhost:8000"
+                  placeholder={`{BASE-URL} (vd: ${detectedServerUrl || apiBase || 'https://your-domain.com'})`}
                 />
+                <div className="agent-url-presets">
+                  <button
+                    type="button"
+                    className={`agent-url-preset-btn ${!customServerUrl ? 'agent-url-preset-btn--active' : ''}`}
+                    onClick={() => setCustomServerUrl('')}
+                    title="Tự động theo dõi domain của backend server hiện tại"
+                  >
+                    🌐 Theo Server ({detectedServerUrl || apiBase || 'Live'})
+                  </button>
+                  <button
+                    type="button"
+                    className={`agent-url-preset-btn ${customServerUrl === '{BASE-URL}' ? 'agent-url-preset-btn--active' : ''}`}
+                    onClick={() => setCustomServerUrl('{BASE-URL}')}
+                    title="Sử dụng biến động {BASE-URL} làm khuôn mẫu"
+                  >
+                    ⚡ Mẫu {'{BASE-URL}'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`agent-url-preset-btn ${customServerUrl === 'auto' ? 'agent-url-preset-btn--active' : ''}`}
+                    onClick={() => setCustomServerUrl('auto')}
+                    title="Chế độ auto dò tìm localhost hoặc cloud"
+                  >
+                    🔄 auto
+                  </button>
+                </div>
               </div>
               <div className="agent-input-field">
                 <label>API Key của bạn:</label>
@@ -321,7 +354,7 @@ CMMI_API_KEY=${activeKeyDisplay}
             <div className="agent-build-prompt-card__footer">
               <div className="target-hint">
                 <span>Server đích:</span>
-                <strong>{customServerUrl.trim() || apiBase || 'https://cmmi-backend.onrender.com'}</strong>
+                <strong>{effectiveBaseUrl}</strong>
               </div>
               <button
                 className="button button--primary button--large"
