@@ -48,18 +48,18 @@ async def download_agent_kit(request: Request):
 
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        # Include all files in agent-kit
+        # Include all files in agent-kit at root of archive (strictly required by Claude Skill uploader)
         for root, _, files in os.walk(agent_kit_dir):
             for file in files:
                 file_path = Path(root) / file
-                archive_name = "cmmi-agent-kit/" + file_path.relative_to(agent_kit_dir).as_posix()
+                archive_name = file_path.relative_to(agent_kit_dir).as_posix()
                 zip_file.write(file_path, archive_name)
 
         # Include dynamically generated OpenAPI 3.1 JSON directly from current app
         try:
             openapi_data = request.app.openapi()
             zip_file.writestr(
-                "cmmi-agent-kit/shared/openapi.json",
+                "shared/openapi.json",
                 json.dumps(openapi_data, indent=2),
             )
         except Exception:

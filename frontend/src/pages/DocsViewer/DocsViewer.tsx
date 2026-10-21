@@ -140,6 +140,7 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
                 Claude Desktop, ChatGPT Custom GPT và Cursor IDE.
               </p>
               <div className="agent-download-tags">
+                <span className="agent-tag">SKILL.md (Claude Skill)</span>
                 <span className="agent-tag">server.py (FastMCP)</span>
                 <span className="agent-tag">claude_desktop_config.json</span>
                 <span className="agent-tag">custom_gpt_instructions.md</span>
@@ -191,10 +192,10 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
 
           {/* Quickstart 3 Platforms */}
           <div className="agent-platforms-grid">
-            {/* Platform 1: Claude Desktop */}
+            {/* Platform 1: Claude Web & Desktop */}
             <div className="panel platform-card">
               <div className="platform-card__header">
-                <div className="platform-badge platform-badge--claude">Claude Desktop & Code</div>
+                <div className="platform-badge platform-badge--claude">Claude (Web Skill & Desktop)</div>
                 <button
                   className="icon-copy-btn"
                   title="Sao chép cấu hình JSON"
@@ -211,10 +212,13 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
                   )}
                 </button>
               </div>
-              <h4>1. Claude Desktop (MCP Stdio)</h4>
+              <h4>1. Claude (Skill Upload & Desktop MCP)</h4>
               <p>
-                Tự động hóa upload ảnh/video từ ổ cứng máy tính lên Cloudflare R2 qua 1 câu lệnh trò
-                chuyện:
+                <strong>Cách A — Upload Skill lên Claude.ai Web:</strong><br />
+                Vào <strong>Settings ➔ Skills ➔ Upload a skill</strong> rồi tải trực tiếp file <code>cmmi-agent-kit.zip</code> lên (đã có sẵn <code>SKILL.md</code> ở gốc file zip theo chuẩn Anthropic).
+              </p>
+              <p style={{ marginTop: '0.6rem' }}>
+                <strong>Cách B — Claude Desktop & Code (MCP Stdio):</strong>
               </p>
               <div className="code-block-wrapper">
                 <pre>
@@ -223,7 +227,7 @@ Khi người dùng yêu cầu liên quan đến quản lý nội dung:
               </div>
               <ol className="platform-steps">
                 <li>
-                  Chạy <code>pip install -r requirements.txt</code> trong thư mục giải nén.
+                  Giải nén file zip và chạy <code>pip install -r requirements.txt</code>.
                 </li>
                 <li>
                   Dán khối JSON trên vào <code>%APPDATA%\Claude\claude_desktop_config.json</code>.

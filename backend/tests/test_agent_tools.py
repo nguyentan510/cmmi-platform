@@ -66,11 +66,17 @@ async def test_download_agent_kit_zip(env):
     zip_bytes = io.BytesIO(response.content)
     with zipfile.ZipFile(zip_bytes, "r") as z:
         names = z.namelist()
+        assert "SKILL.md" in names
         assert any("server.py" in name for name in names)
         assert any("README.md" in name for name in names)
         assert any("requirements.txt" in name for name in names)
         assert any("claude_desktop_config.json" in name for name in names)
         assert any("openapi.json" in name for name in names)
+
+        # Verify SKILL.md has valid YAML frontmatter for Claude Skill upload
+        skill_content = z.read("SKILL.md").decode("utf-8")
+        assert skill_content.startswith("---\nname: cmmi-agent-kit")
+        assert "description:" in skill_content
 
     # Test tolerance for duplicate slashes (e.g. https://domain//api/v1/tools/agent-kit.zip)
     double_slash_resp = await client.get("http://test//api/v1/tools/agent-kit.zip")
