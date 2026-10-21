@@ -120,7 +120,7 @@
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 8px 10px;
+  padding: 7px 10px;
   gap: 10px;
   text-align: left;
   width: 100%;
@@ -131,13 +131,24 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  user-select: none;
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
 
+  svg {
+    color: v.$text-muted;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+  }
+
   &:hover {
     background: v.$slate-100;
     color: v.$text-main;
+
+    svg {
+      color: v.$text-main;
+    }
   }
 }
 
@@ -146,9 +157,17 @@
   color: v.$brand-primary;
   font-weight: 600;
 
+  svg {
+    color: v.$brand-primary;
+  }
+
   &:hover {
     background: v.$brand-light;
     color: v.$brand-hover;
+
+    svg {
+      color: v.$brand-primary;
+    }
   }
 }
 
@@ -158,6 +177,7 @@
   background: v.$brand-primary;
   border-radius: 50%;
   margin-left: auto;
+  box-shadow: 0 0 0 2px rgba(4, 120, 87, 0.15);
 }
 
 .nav-group {
@@ -189,19 +209,34 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  user-select: none;
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
 
+  svg {
+    color: v.$text-muted;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+  }
+
   &:hover {
     background: v.$slate-100;
     color: v.$text-main;
+
+    svg {
+      color: v.$text-main;
+    }
   }
 
   &--active {
     background: v.$brand-light;
     color: v.$brand-primary;
     font-weight: 600;
+
+    svg {
+      color: v.$brand-primary;
+    }
   }
 
   .nav-item__dot {

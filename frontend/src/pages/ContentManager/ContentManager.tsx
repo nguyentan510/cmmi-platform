@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   Trash2,
+  X,
 } from 'lucide-react';
 import {
   Badge,
@@ -327,19 +328,30 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
           </div>
 
           <div className="toolbar-controls">
-            <label className="search-field compact-search">
-              <Search size={15} />
+            <div className="search-field compact-search">
+              <Search size={14} className="search-icon" />
               <input
                 aria-label="Search content"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Find a story…"
               />
-            </label>
+              {searchInput && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => setSearchInput('')}
+                  aria-label="Xóa tìm kiếm"
+                  title="Xóa tìm kiếm"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
 
             <select
               aria-label="Filter by channel"
-              className="compact-select"
+              className={`compact-select ${channel ? 'compact-select--filtered' : ''}`}
               value={channel}
               onChange={(e) => {
                 setChannel(e.target.value as typeof channel);

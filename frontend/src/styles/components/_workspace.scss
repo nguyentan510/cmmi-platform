@@ -1474,16 +1474,53 @@ td:has(> .table-marker) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: 16px;
+  padding: 0 16px;
+  min-height: 48px;
   border-bottom: 1px solid v.$border;
   background: v.$surface;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 
   .tabs {
     display: flex;
-    gap: 14px;
+    gap: 18px;
     align-items: center;
+    height: 48px;
+  }
+
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    height: 48px;
+    padding: 0 4px;
+    position: relative;
+    font-size: 13px;
+    font-weight: 500;
+    color: v.$text-muted;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: v.$text-main;
+    }
+
+    &--active {
+      color: v.$brand-primary;
+      font-weight: 600;
+
+      &::after {
+        position: absolute;
+        content: '';
+        height: 2px;
+        border-radius: 2px 2px 0 0;
+        bottom: 0;
+        background: v.$brand-primary;
+        left: 0;
+        right: 0;
+      }
+    }
   }
 
   .tab-badge {
@@ -1511,26 +1548,197 @@ td:has(> .table-marker) {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
   }
 
   .compact-search {
-    width: 200px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 180px;
+    height: 32px;
     margin-bottom: 0;
+    transition: width 0.2s ease;
+
+    &:focus-within {
+      width: 220px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 9px;
+      color: v.$text-muted;
+      pointer-events: none;
+      flex-shrink: 0;
+    }
 
     input {
-      padding: 5px 10px 5px 28px;
+      width: 100%;
+      height: 32px;
+      padding: 0 26px 0 28px;
       font-size: 12.5px;
+      border: 1px solid v.$border-strong;
+      border-radius: v.$radius-md;
+      background: v.$slate-50;
+      color: v.$text-main;
+      transition: all 0.15s ease;
+
+      &::placeholder {
+        color: v.$text-subtle;
+      }
+
+      &:focus {
+        background: v.$surface;
+        border-color: v.$border-focus;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        outline: none;
+      }
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: v.$slate-200;
+      color: v.$text-muted;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: v.$slate-300;
+        color: v.$text-main;
+      }
     }
   }
 
   .compact-select {
-    padding: 5px 10px;
+    width: auto;
+    min-width: 122px;
+    height: 32px;
+    padding: 0 28px 0 10px;
     font-size: 12.5px;
+    font-weight: 500;
     border: 1px solid v.$border-strong;
     border-radius: v.$radius-md;
-    background: v.$surface;
+    background-color: v.$surface;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    appearance: none;
+    -webkit-appearance: none;
     color: v.$text-main;
+    cursor: pointer;
+    line-height: 30px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      border-color: v.$slate-400;
+      background-color: v.$slate-50;
+    }
+
+    &:focus {
+      border-color: v.$border-focus;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    &--filtered {
+      border-color: v.$brand-primary;
+      background-color: v.$brand-light;
+      color: v.$brand-primary;
+      font-weight: 600;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23047857' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+  }
+
+  .view-toggle {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid v.$border-strong;
+    border-radius: v.$radius-md;
+    background: v.$slate-100;
+    gap: 2px;
+
+    button {
+      height: 26px;
+      width: 28px;
+      padding: 0;
+      border-radius: v.$radius-sm;
+      color: v.$text-muted;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: v.$text-main;
+      }
+
+      &.active {
+        background: v.$surface;
+        color: v.$brand-primary;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+    }
+  }
+
+  .button--primary.button--sm {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: v.$radius-md;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 992px) {
+  .unified-toolbar {
+    flex-wrap: wrap;
+    padding: 8px 16px;
+    min-height: auto;
+    gap: 10px;
+
+    .tabs {
+      height: auto;
+      overflow-x: auto;
+      max-width: 100%;
+      padding-bottom: 2px;
+    }
+
+    .tab {
+      height: 34px;
+    }
+
+    .toolbar-controls {
+      width: 100%;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .compact-search {
+      flex: 1 1 180px;
+
+      &:focus-within {
+        width: 100%;
+      }
+    }
   }
 }
 

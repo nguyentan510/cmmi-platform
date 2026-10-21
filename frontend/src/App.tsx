@@ -70,9 +70,9 @@ export default function App() {
 
   const pageTitle =
     page === 'contents'
-      ? 'Content workspace'
+      ? 'Content'
       : page === 'media'
-        ? 'Media library'
+        ? 'Media'
         : page === 'help'
           ? 'Help & docs'
           : settingsTab === 'keys'
@@ -80,6 +80,13 @@ export default function App() {
             : settingsTab === 'users'
               ? 'Users'
               : 'Settings';
+
+  const accessibleHeading =
+    page === 'contents'
+      ? 'Content workspace'
+      : page === 'media'
+        ? 'Media library'
+        : pageTitle;
 
   return (
     <div className="app-shell">
@@ -118,31 +125,33 @@ export default function App() {
 
         <span className="sidebar__section">WORKSPACE</span>
         <nav aria-label="Main navigation">
-          {/* Content workspace */}
+          {/* Content */}
           <button
             className={page === 'contents' ? 'nav-item nav-item--active' : 'nav-item'}
             aria-current={page === 'contents' ? 'page' : undefined}
+            aria-label="Content workspace"
             onClick={() => {
               setPage('contents');
               setMobile(false);
             }}
           >
             <LayoutDashboard size={18} strokeWidth={1.7} />
-            Content workspace
+            Content
             {page === 'contents' && <span className="nav-item__dot" />}
           </button>
 
-          {/* Media library */}
+          {/* Media */}
           <button
             className={page === 'media' ? 'nav-item nav-item--active' : 'nav-item'}
             aria-current={page === 'media' ? 'page' : undefined}
+            aria-label="Media library"
             onClick={() => {
               setPage('media');
               setMobile(false);
             }}
           >
             <FolderOpen size={18} strokeWidth={1.7} />
-            Media library
+            Media
             {page === 'media' && <span className="nav-item__dot" />}
           </button>
 
@@ -259,7 +268,7 @@ export default function App() {
           {/* Streamlined Page Heading */}
           <div className="page-heading page-heading--compact">
             <div className="page-heading__left">
-              <h1>{pageTitle}</h1>
+              <h1 aria-label={accessibleHeading}>{pageTitle}</h1>
             </div>
             <div className="page-heading__actions">
               <a
