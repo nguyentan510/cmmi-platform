@@ -73,6 +73,33 @@ main {
   }
 }
 
+.compact-stats {
+  gap: 10px;
+  margin-bottom: 14px;
+
+  .stat {
+    padding: 8px 12px;
+
+    > div {
+      font-size: 11.5px;
+    }
+
+    > strong {
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    > small {
+      font-size: 11px;
+    }
+
+    .stat__date {
+      font-size: 13px;
+      margin-top: 4px;
+    }
+  }
+}
+
 .stat--sand {
   background: v.$slate-50;
   border-color: v.$border;

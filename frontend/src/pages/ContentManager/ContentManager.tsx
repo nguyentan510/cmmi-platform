@@ -1,18 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDownUp,
-  ArrowUpRight,
   CalendarDays,
-  CheckCheck,
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
   FileText,
-  Layers3,
   List,
   Pencil,
   Plus,
   Search,
   Trash2,
 } from 'lucide-react';
-import { Badge, ChannelBadge, Empty, ErrorBox, Pager, VideoThumbnail } from '../../components/Shared';
+import {
+  Badge,
+  Empty,
+  ErrorBox,
+  FacebookIcon,
+  Pager,
+  TikTokIcon,
+  VideoThumbnail,
+  YouTubeIcon,
+  getChannelUrl,
+} from '../../components/Shared';
 import {
   type Api,
   type Content,
@@ -24,6 +35,195 @@ import {
 import { useLoad } from '../../services/useLoad';
 import Calendar from './Calendar';
 import ContentEditor from './ContentEditor';
+
+interface ChannelLinkItem {
+  key: 'facebook' | 'tiktok' | 'youtube';
+  label: string;
+  icon: typeof FacebookIcon;
+  id?: string | null;
+  url: string;
+}
+
+function ChannelDropdown({
+  item,
+  onEdit,
+}: {
+  item: Content;
+  onEdit: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const channels: ChannelLinkItem[] = [
+    {
+      key: 'facebook',
+      label: 'Facebook',
+      icon: FacebookIcon,
+      id: item.fb_post_id,
+      url: getChannelUrl('facebook', item.fb_post_id),
+    },
+    {
+      key: 'tiktok',
+      label: 'TikTok',
+      icon: TikTokIcon,
+      id: item.tiktok_post_id,
+      url: getChannelUrl('tiktok', item.tiktok_post_id),
+    },
+    {
+      key: 'youtube',
+      label: 'YouTube',
+      icon: YouTubeIcon,
+      id: item.youtube_post_id,
+      url: getChannelUrl('youtube', item.youtube_post_id),
+    },
+  ];
+
+  const connected = channels.filter((c) => !!c.id && !!c.id.trim());
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="channel-dropdown-wrapper" ref={dropdownRef}>
+      <button
+        type="button"
+        className={`channel-toggle-pill ${connected.length > 0 ? 'channel-toggle-pill--active' : 'channel-toggle-pill--empty'}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        aria-expanded={isOpen}
+        title="Bấm để xem danh sách link đã đăng"
+      >
+        {connected.length > 0 ? (
+          <>
+            <span className="channel-toggle-icons">
+              {connected.map((c) => (
+                <c.icon key={c.key} size={11} className={`channel-mini-icon--${c.key}`} />
+              ))}
+            </span>
+            <span className="channel-toggle-count">{connected.length}/3 kênh</span>
+          </>
+        ) : (
+          <span className="channel-toggle-empty-label">Chưa có link</span>
+        )}
+        <ChevronDown size={11} className={`channel-toggle-caret ${isOpen ? 'open' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div
+          className="channel-dropdown-menu"
+          role="region"
+          aria-label="Danh sách liên kết bài đăng"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="channel-dropdown-menu__header">
+            <strong>Liên kết xuất bản</strong>
+            <span className="count-tag">{connected.length}/3 đã kết nối</span>
+          </div>
+
+          <div className="channel-dropdown-menu__list">
+            {channels.map((c) => {
+              const hasUrl = !!c.url;
+              return (
+                <div
+                  key={c.key}
+                  className={`channel-item-row ${hasUrl ? 'channel-item-row--active' : 'channel-item-row--empty'}`}
+                >
+                  <div className="channel-item-row__meta">
+                    <span className={`channel-badge-icon channel-badge-icon--${c.key}`}>
+                      <c.icon size={13} />
+                    </span>
+                    <span className="channel-item-row__title">{c.label}</span>
+                    {hasUrl ? (
+                      <span className="status-tag status-tag--connected">Đã đăng</span>
+                    ) : (
+                      <span className="status-tag status-tag--empty">Trống</span>
+                    )}
+                  </div>
+
+                  {hasUrl ? (
+                    <div className="channel-item-row__link-box">
+                      <a
+                        href={c.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="channel-url-link"
+                        title={c.url}
+                      >
+                        <span className="url-truncate">{c.url}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                      <button
+                        type="button"
+                        className="icon-action-btn"
+                        title="Sao chép liên kết"
+                        onClick={() => {
+                          navigator.clipboard.writeText(c.url);
+                          setCopiedKey(c.key);
+                          setTimeout(() => setCopiedKey(null), 1500);
+                        }}
+                      >
+                        {copiedKey === c.key ? <Check size={12} /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="channel-empty-frame">
+                      <span className="channel-empty-frame__text">
+                        Khung trống · Chưa đăng {c.label}
+                      </span>
+                      <button
+                        type="button"
+                        className="channel-add-id-btn"
+                        onClick={() => {
+                          setIsOpen(false);
+                          onEdit();
+                        }}
+                      >
+                        <Plus size={11} />
+                        Thêm ID
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="channel-dropdown-menu__footer">
+            <button
+              type="button"
+              className="quick-edit-btn"
+              onClick={() => {
+                setIsOpen(false);
+                onEdit();
+              }}
+            >
+              <Pencil size={12} />
+              Mở sửa bài viết
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () => void }) {
   const [status, setStatus] = useState<Status | ''>('');
@@ -43,6 +243,7 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput, search]);
+
   const items = useLoad(
     () =>
       result(
@@ -60,7 +261,9 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
       ),
     [api, status, channel, search, offset],
   );
+
   const close = useCallback(() => setEditor(null), []);
+
   async function remove(item: Content) {
     if (!window.confirm(`Delete “${item.title}”? Media files will remain in your library.`)) return;
     setError('');
@@ -73,64 +276,17 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
       setError(errorMessage(e));
     }
   }
+
   const data = items.data ?? [];
+  const draftCount = data.filter((i) => i.status === 'DRAFT').length;
+  const scheduledCount = data.filter((i) => i.status === 'SCHEDULED').length;
+  const publishedCount = data.filter((i) => i.status === 'PUBLISHED').length;
+
   return (
     <>
-      <div className="stats-grid">
-        {[
-          {
-            label: 'Content in this view',
-            value: data.length,
-            icon: Layers3,
-            tone: 'sand',
-            note: 'Your ideas, organized',
-          },
-          {
-            label: 'Drafts',
-            value: data.filter((i) => i.status === 'DRAFT').length,
-            icon: FileText,
-            tone: 'lilac',
-            note: 'A little work in progress',
-          },
-          {
-            label: 'Scheduled',
-            value: data.filter((i) => i.status === 'SCHEDULED').length,
-            icon: CalendarDays,
-            tone: 'peach',
-            note: 'Ready for their moment',
-          },
-          {
-            label: 'Published',
-            value: data.filter((i) => i.status === 'PUBLISHED').length,
-            icon: CheckCheck,
-            tone: 'mint',
-            note: 'Out there making an impact',
-          },
-        ].map((item) => (
-          <article className={`stat stat--${item.tone}`} key={item.label}>
-            <div>
-              <span>{item.label}</span>
-              <item.icon size={18} strokeWidth={1.6} />
-            </div>
-            <strong>{items.loading ? '—' : String(item.value).padStart(2, '0')}</strong>
-            <small>{item.note}</small>
-          </article>
-        ))}
-      </div>
       <section className="panel content-panel">
-        <div className="panel__heading">
-          <div>
-            <h2>
-              Your stories <span className="count">{data.length}</span>
-            </h2>
-            <p>A home for every idea, draft and finished piece.</p>
-          </div>
-          <button className="button button--primary" onClick={() => setEditor('new')}>
-            <Plus size={17} />
-            New content
-          </button>
-        </div>
-        <div className="toolbar">
+        {/* All-in-One Compact Toolbar: Tabs with Counts + Filters + Primary Action */}
+        <div className="unified-toolbar">
           <div className="tabs">
             <button
               className={!status ? 'tab tab--active' : 'tab'}
@@ -139,64 +295,51 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
                 setOffset(0);
               }}
             >
-              All content
-            </button>
-            {(['DRAFT', 'SCHEDULED', 'PUBLISHED'] as Status[]).map((value) => (
-              <button
-                key={value}
-                className={status === value ? 'tab tab--active' : 'tab'}
-                onClick={() => {
-                  setStatus(value);
-                  setOffset(0);
-                }}
-              >
-                {value[0] + value.slice(1).toLowerCase()}
-              </button>
-            ))}
-          </div>
-          <div className="view-toggle">
-            <button
-              aria-label="Table view"
-              className={view === 'table' ? 'active' : ''}
-              onClick={() => setView('table')}
-            >
-              <List size={17} />
+              All content <span className="tab-badge">{data.length}</span>
             </button>
             <button
-              aria-label="Calendar view"
-              className={view === 'calendar' ? 'active' : ''}
-              onClick={() => setView('calendar')}
-            >
-              <CalendarDays size={17} />
-            </button>
-          </div>
-        </div>
-        <div className="filterbar">
-          <label className="search-field">
-            <Search size={16} />
-            <input
-              aria-label="Search content"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Find a story…"
-            />
-          </label>
-          <div>
-            <select
-              aria-label="Filter by status"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as Status | '');
+              className={status === 'DRAFT' ? 'tab tab--active' : 'tab'}
+              onClick={() => {
+                setStatus('DRAFT');
                 setOffset(0);
               }}
             >
-              <option value="">All statuses</option>
-              {['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'].map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
+              Draft <span className="tab-badge">{draftCount}</span>
+            </button>
+            <button
+              className={status === 'SCHEDULED' ? 'tab tab--active' : 'tab'}
+              onClick={() => {
+                setStatus('SCHEDULED');
+                setOffset(0);
+              }}
+            >
+              Scheduled <span className="tab-badge">{scheduledCount}</span>
+            </button>
+            <button
+              className={status === 'PUBLISHED' ? 'tab tab--active' : 'tab'}
+              onClick={() => {
+                setStatus('PUBLISHED');
+                setOffset(0);
+              }}
+            >
+              Published <span className="tab-badge">{publishedCount}</span>
+            </button>
+          </div>
+
+          <div className="toolbar-controls">
+            <label className="search-field compact-search">
+              <Search size={15} />
+              <input
+                aria-label="Search content"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Find a story…"
+              />
+            </label>
+
             <select
               aria-label="Filter by channel"
+              className="compact-select"
               value={channel}
               onChange={(e) => {
                 setChannel(e.target.value as typeof channel);
@@ -208,16 +351,46 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
               <option value="tiktok">TikTok</option>
               <option value="youtube">YouTube</option>
             </select>
+
+            <div className="view-toggle">
+              <button
+                aria-label="Table view"
+                className={view === 'table' ? 'active' : ''}
+                onClick={() => setView('table')}
+                title="Bảng dữ liệu"
+              >
+                <List size={16} />
+              </button>
+              <button
+                aria-label="Calendar view"
+                className={view === 'calendar' ? 'active' : ''}
+                onClick={() => setView('calendar')}
+                title="Lịch xuất bản"
+              >
+                <CalendarDays size={16} />
+              </button>
+            </div>
+
+            <button
+              className="button button--primary button--sm"
+              onClick={() => setEditor('new')}
+              title="Tạo bài viết mới"
+            >
+              <Plus size={16} />
+              New content
+            </button>
           </div>
         </div>
+
         <ErrorBox message={error || items.error} />
+
         {items.loading ? (
           <div className="loading">Gathering your stories…</div>
         ) : view === 'calendar' ? (
           <Calendar items={data} onSelect={setEditor} />
         ) : data.length ? (
           <div className="table-scroll">
-            <table>
+            <table className="compact-table">
               <thead>
                 <tr>
                   <th className="table-check">
@@ -227,7 +400,7 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
                     CONTENT <ArrowDownUp size={12} />
                   </th>
                   <th>STATUS</th>
-                  <th>CHANNELS</th>
+                  <th>CHANNELS & LINKS</th>
                   <th>SCHEDULED FOR</th>
                   <th>MEDIA</th>
                   <th>
@@ -250,28 +423,24 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
                             const primary = item.media_assets.find(
                               (m) => m.upload_confirmed && !m.is_cleaned && m.public_url,
                             );
-                            if (!primary) return <FileText size={19} />;
+                            if (!primary) return <FileText size={18} />;
                             if (primary.media_type === 'IMAGE') {
                               return <img src={primary.public_url} alt="" loading="lazy" />;
                             }
                             return <VideoThumbnail src={primary.public_url} alt={item.title} />;
                           })()}
                         </span>
-                        <span>
+                        <span className="content-text-group">
                           <strong>{item.title}</strong>
-                          <small>{item.body.slice(0, 55) || 'A new story waiting to unfold'}</small>
+                          <small>{item.body.slice(0, 60) || 'Chưa có nội dung mô tả…'}</small>
                         </span>
                       </button>
                     </td>
                     <td>
                       <Badge status={item.status} />
                     </td>
-                    <td>
-                      <div className="channels">
-                        <ChannelBadge channel="facebook" value={item.fb_post_id} />
-                        <ChannelBadge channel="tiktok" value={item.tiktok_post_id} />
-                        <ChannelBadge channel="youtube" value={item.youtube_post_id} />
-                      </div>
+                    <td className="channels-cell">
+                      <ChannelDropdown item={item} onEdit={() => setEditor(item)} />
                     </td>
                     <td className="date-cell">{dateText(item.scheduled_at)}</td>
                     <td>
@@ -279,14 +448,19 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
                     </td>
                     <td>
                       <div className="row-actions">
-                        <button aria-label={`Edit ${item.title}`} onClick={() => setEditor(item)}>
-                          <Pencil size={15} />
+                        <button
+                          aria-label={`Edit ${item.title}`}
+                          title="Chỉnh sửa bài viết"
+                          onClick={() => setEditor(item)}
+                        >
+                          <Pencil size={14} />
                         </button>
                         <button
                           aria-label={`Delete ${item.title}`}
+                          title="Xóa bài viết"
                           onClick={() => void remove(item)}
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -302,28 +476,7 @@ export default function ContentManager({ api, onHelp }: { api: Api; onHelp: () =
         )}
         <Pager offset={offset} length={data.length} onChange={setOffset} />
       </section>
-      <div className="bottom-note">
-        <div>
-          <span className="note-icon">
-            <ArrowUpRight size={19} />
-          </span>
-          <span>
-            <strong>Your next great idea deserves a little space.</strong>
-            <small>
-              Keep drafts, assets and publishing details together. The rest is up to you.
-            </small>
-          </span>
-        </div>
-        <a
-          href="/help"
-          onClick={(event) => {
-            event.preventDefault();
-            onHelp();
-          }}
-        >
-          Meet your workspace <ArrowUpRight size={15} />
-        </a>
-      </div>
+
       {editor && (
         <ContentEditor
           api={api}

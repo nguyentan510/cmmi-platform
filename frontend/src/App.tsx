@@ -9,27 +9,17 @@ import {
   LogOut,
   Menu,
   Settings2,
-  Users,
+  Users as UsersIcon,
   X,
 } from 'lucide-react';
 import { type User, makeApi } from './services/api';
 import Login from './pages/Login/Login';
 import ContentManager from './pages/ContentManager/ContentManager';
 import MediaLibrary from './pages/MediaLibrary/MediaLibrary';
-import ApiKeys from './pages/ApiKeys/ApiKeys';
-import Settings from './pages/Settings/Settings';
-import UserManager from './pages/Users/Users';
+import Settings, { type SettingsTab } from './pages/Settings/Settings';
 import DocsViewer from './pages/DocsViewer/DocsViewer';
 
-type Page = 'contents' | 'media' | 'keys' | 'settings' | 'users' | 'help';
-const navigation = [
-  { id: 'contents', label: 'Content workspace', icon: LayoutDashboard },
-  { id: 'media', label: 'Media library', icon: FolderOpen },
-  { id: 'keys', label: 'API keys', icon: KeyRound },
-  { id: 'users', label: 'Users', icon: Users, admin: true },
-  { id: 'settings', label: 'Settings', icon: Settings2, admin: true },
-  { id: 'help', label: 'Help & docs', icon: BookOpen },
-] as const;
+type Page = 'contents' | 'media' | 'settings' | 'help';
 
 const SESSION_STORAGE_KEY = 'cmmi_session';
 
@@ -58,13 +48,16 @@ export default function App() {
   const [page, setPage] = useState<Page>(
     window.location.pathname === '/help' ? 'help' : 'contents',
   );
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('cleanup');
   const [mobile, setMobile] = useState(false);
   const api = useMemo(() => makeApi(session?.token), [session?.token]);
+
   useEffect(() => {
     const logout = () => setSession(null);
     window.addEventListener('cmmi:unauthorized', logout);
     return () => window.removeEventListener('cmmi:unauthorized', logout);
   }, []);
+
   if (!session)
     return (
       <Login
@@ -74,7 +67,20 @@ export default function App() {
         }}
       />
     );
-  const selected = navigation.find((item) => item.id === page)!;
+
+  const pageTitle =
+    page === 'contents'
+      ? 'Content workspace'
+      : page === 'media'
+        ? 'Media library'
+        : page === 'help'
+          ? 'Help & docs'
+          : settingsTab === 'keys'
+            ? 'API keys'
+            : settingsTab === 'users'
+              ? 'Users'
+              : 'Settings';
+
   return (
     <div className="app-shell">
       <aside className={`sidebar ${mobile ? 'sidebar--open' : ''}`}>
@@ -100,6 +106,7 @@ export default function App() {
             <X size={18} />
           </button>
         </div>
+
         <div className="workspace-label">
           <span className="workspace-label__icon">W</span>
           <div>
@@ -108,39 +115,112 @@ export default function App() {
           </div>
           <ChevronRight size={14} />
         </div>
+
         <span className="sidebar__section">WORKSPACE</span>
         <nav aria-label="Main navigation">
-          {navigation
-            .filter((item) => !('admin' in item) || session.user.role === 'ADMIN')
-            .map((item) => (
+          {/* Content workspace */}
+          <button
+            className={page === 'contents' ? 'nav-item nav-item--active' : 'nav-item'}
+            aria-current={page === 'contents' ? 'page' : undefined}
+            onClick={() => {
+              setPage('contents');
+              setMobile(false);
+            }}
+          >
+            <LayoutDashboard size={18} strokeWidth={1.7} />
+            Content workspace
+            {page === 'contents' && <span className="nav-item__dot" />}
+          </button>
+
+          {/* Media library */}
+          <button
+            className={page === 'media' ? 'nav-item nav-item--active' : 'nav-item'}
+            aria-current={page === 'media' ? 'page' : undefined}
+            onClick={() => {
+              setPage('media');
+              setMobile(false);
+            }}
+          >
+            <FolderOpen size={18} strokeWidth={1.7} />
+            Media library
+            {page === 'media' && <span className="nav-item__dot" />}
+          </button>
+
+          {/* Settings Group (Unified Hub) */}
+          <div className="nav-group">
+            <button
+              className={
+                page === 'settings' && settingsTab === 'cleanup'
+                  ? 'nav-item nav-item--active'
+                  : 'nav-item'
+              }
+              aria-current={page === 'settings' && settingsTab === 'cleanup' ? 'page' : undefined}
+              onClick={() => {
+                setPage('settings');
+                setSettingsTab('cleanup');
+                setMobile(false);
+              }}
+            >
+              <Settings2 size={18} strokeWidth={1.7} />
+              Settings
+              {page === 'settings' && settingsTab === 'cleanup' && <span className="nav-item__dot" />}
+            </button>
+
+            <div className="nav-sub-items">
               <button
-                key={item.id}
-                className={page === item.id ? 'nav-item nav-item--active' : 'nav-item'}
-                aria-current={page === item.id ? 'page' : undefined}
+                className={
+                  page === 'settings' && settingsTab === 'keys'
+                    ? 'nav-sub-item nav-sub-item--active'
+                    : 'nav-sub-item'
+                }
                 onClick={() => {
-                  setPage(item.id);
+                  setPage('settings');
+                  setSettingsTab('keys');
                   setMobile(false);
                 }}
               >
-                <item.icon size={18} strokeWidth={1.7} />
-                {item.label}
-                {page === item.id && <span className="nav-item__dot" />}
+                <KeyRound size={15} strokeWidth={1.7} />
+                API keys
+                {page === 'settings' && settingsTab === 'keys' && <span className="nav-item__dot" />}
               </button>
-            ))}
+
+              {session.user.role === 'ADMIN' && (
+                <button
+                  className={
+                    page === 'settings' && settingsTab === 'users'
+                      ? 'nav-sub-item nav-sub-item--active'
+                      : 'nav-sub-item'
+                  }
+                  onClick={() => {
+                    setPage('settings');
+                    setSettingsTab('users');
+                    setMobile(false);
+                  }}
+                >
+                  <UsersIcon size={15} strokeWidth={1.7} />
+                  Users
+                  {page === 'settings' && settingsTab === 'users' && <span className="nav-item__dot" />}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Help & docs */}
+          <button
+            className={page === 'help' ? 'nav-item nav-item--active' : 'nav-item'}
+            aria-current={page === 'help' ? 'page' : undefined}
+            onClick={() => {
+              setPage('help');
+              setMobile(false);
+            }}
+          >
+            <BookOpen size={18} strokeWidth={1.7} />
+            Help & docs
+            {page === 'help' && <span className="nav-item__dot" />}
+          </button>
         </nav>
-        <div className="sidebar__guide">
-          <span className="eyebrow">BUILT FOR YOUR WORKFLOW</span>
-          <h3>
-            A home for
-            <br />
-            every story.
-          </h3>
-          <p>Connect your tools with one simple API.</p>
-          <a href="/docs" target="_blank" rel="noreferrer">
-            Explore the API
-            <ArrowUpRight size={16} />
-          </a>
-        </div>
+
+        {/* User profile fixed at bottom of sidebar (Cleaned up, no promo banner) */}
         <div className="sidebar__profile">
           <span className="avatar">{session.user.email.slice(0, 1).toUpperCase()}</span>
           <div>
@@ -152,9 +232,10 @@ export default function App() {
           </button>
         </div>
       </aside>
+
       <div className="workspace">
         <header className="topbar">
-          <div>
+          <div className="topbar__left">
             <button
               className="mobile-only icon-button"
               aria-label="Open navigation"
@@ -164,53 +245,52 @@ export default function App() {
             </button>
             <span>Workspace</span>
             <ChevronRight size={13} />
-            <strong>{selected.label}</strong>
+            <strong>{pageTitle}</strong>
           </div>
           <div className="topbar__right">
-            <span className="live-dot" />
-            Your creative operations, connected
-            <span className="topbar__avatar">{session.user.email.slice(0, 1).toUpperCase()}</span>
+            <span className="live-dot" title="Workspace operational" />
+            <span className="topbar__role-badge">
+              {session.user.role === 'ADMIN' ? 'Admin' : 'Creator'}
+            </span>
           </div>
         </header>
+
         <main key={session.user.id}>
-          <div className="page-heading">
-            <div>
-              <span className="eyebrow">YOUR WORK, IN A GOOD PLACE</span>
-              <h1>{selected.label}</h1>
-              <p>
-                {page === 'contents'
-                  ? 'From first idea to published story. Keep it all moving.'
-                  : page === 'media'
-                    ? 'A considered collection of everything you create.'
-                    : page === 'keys'
-                      ? 'Connect your agents and automations, on your terms.'
-                      : page === 'settings'
-                        ? 'A little housekeeping for a lighter workspace.'
-                        : page === 'users'
-                          ? 'Good work happens with the right people.'
-                          : 'Everything you need to make yourself at home.'}
-              </p>
+          {/* Streamlined Page Heading */}
+          <div className="page-heading page-heading--compact">
+            <div className="page-heading__left">
+              <h1>{pageTitle}</h1>
             </div>
-            <span className="page-heading__date">
-              {new Date().toLocaleDateString('en', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </span>
+            <div className="page-heading__actions">
+              <a
+                href="/help"
+                className="meet-workspace-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPage('help');
+                }}
+              >
+                Meet your workspace <ArrowUpRight size={13} />
+              </a>
+            </div>
           </div>
+
           {page === 'contents' && <ContentManager api={api} onHelp={() => setPage('help')} />}
           {page === 'media' && <MediaLibrary api={api} />}
-          {page === 'keys' && <ApiKeys api={api} isAdmin={session.user.role === 'ADMIN'} />}
-          {page === 'settings' && <Settings api={api} />}
-          {page === 'users' && <UserManager api={api} currentUser={session.user} />}
+          {page === 'settings' && (
+            <Settings
+              api={api}
+              currentUser={session.user}
+              activeTab={settingsTab}
+              onTabChange={setSettingsTab}
+            />
+          )}
           {page === 'help' && <DocsViewer />}
+
           <footer className="workspace-footer">
-            <span>
-              CMMI <span>·</span> A little structure. More room to create.
-            </span>
+            <span>CMMI Studio · Content & Media Management</span>
             <a href="/llms.txt" target="_blank" rel="noreferrer">
-              Made for humans & agents <ArrowUpRight size={12} />
+              LLMs Context <ArrowUpRight size={12} />
             </a>
           </footer>
         </main>

@@ -1,14 +1,14 @@
 @use '../abstracts/variables' as v;
 
 .topbar {
-  height: v.$topbar-height;
+  height: 48px;
   border-bottom: 1px solid v.$border;
-  padding: 0 24px;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -30,24 +30,21 @@
   }
 
   .topbar__right {
-    font-size: 12.5px;
+    font-size: 12px;
     gap: 8px;
     color: v.$text-muted;
   }
 
-  .topbar__avatar {
-    width: 28px;
-    height: 28px;
-    margin-left: 8px;
-    background: v.$brand-light;
-    color: v.$brand-primary;
-    border: 1px solid v.$status-published-border;
+  .topbar__role-badge {
+    font-size: 11px;
     font-weight: 600;
-    font-size: 12px;
-    font-family: inherit;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
+    color: v.$brand-primary;
+    background: v.$brand-light;
+    padding: 2px 7px;
+    border-radius: v.$radius-xs;
+    border: 1px solid v.$status-published-border;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
 }
 
@@ -63,32 +60,39 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-
-  .eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-  }
+  margin-bottom: 14px;
 
   h1 {
-    margin: 2px 0;
-    font-size: 24px;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
     color: v.$text-main;
+    letter-spacing: -0.02em;
   }
 
   p {
-    color: v.$text-muted;
-    font-size: 13px;
-    line-height: 1.4;
+    display: none; // Hide wordy slogans
+  }
+
+  &--compact {
+    margin-bottom: 12px;
   }
 }
 
-.page-heading__date {
-  color: v.$text-muted;
+.meet-workspace-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  background: v.$slate-100;
-  border: 1px solid v.$border;
-  padding: 4px 10px;
-  border-radius: v.$radius-md;
+  color: v.$text-muted;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: v.$radius-sm;
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: v.$brand-primary;
+    background-color: v.$slate-100;
+  }
 }
